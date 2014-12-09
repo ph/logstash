@@ -12,6 +12,7 @@ module LogStash
     PLUGINS_DIR = ::File.join(LOGSTASH_HOME, "vendor", "plugins")
     GEMFILE_PATH = ::File.join(LOGSTASH_HOME, "tools", "Gemfile")
     BOOTSTRAP_GEM_PATH = ::File.join(LOGSTASH_HOME, 'build', 'bootstrap')
+    LOGSTASH_BUILD_PATH = ::File.join(LOGSTASH_HOME, 'build')
 
     # loads currently embedded elasticsearch jars
     # @raise LogStash::EnvironmentError if not running under JRuby or if no jar files are found
@@ -44,11 +45,17 @@ module LogStash
     # the bootstrap gems are required specificly for bundler which is a runtime dependency
     # of some plugins dependedant gems.
     def set_gem_paths!
-      ENV["GEM_PATH"] = [logstash_gem_home, plugins_gem_home, BOOTSTRAP_GEM_PATH].join(":")
+      ENV["GEM_PATH"] = gem_path.join(":")
+    end
+
+    def gem_paths
+     [logstash_gem_home, plugins_gem_home, BOOTSTRAP_GEM_PATH]
     end
 
     def bundler_install_command(gem_file, gem_path)
       [
+        ruby_bin,
+        "-S",
         File.join(BOOTSTRAP_GEM_PATH, "bin", "bundle"),
           "install",
             "--gemfile=#{gem_file}",
