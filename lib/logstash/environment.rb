@@ -45,7 +45,7 @@ module LogStash
     # the bootstrap gems are required specificly for bundler which is a runtime dependency
     # of some plugins dependedant gems.
     def set_gem_paths!
-      ENV["GEM_PATH"] = gem_path.join(":")
+      ENV["GEM_PATH"] = gem_paths.join(":")
     end
 
     def gem_paths
