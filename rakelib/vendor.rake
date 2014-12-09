@@ -232,7 +232,7 @@ namespace "vendor" do
             ::File.join(LogStash::Environment::LOGSTASH_HOME, 'build/bootstrap'),
           ].join(":")
         }
-        cmd = [LogStash::Environment.ruby_bin, "-S"] + LogStash::Environment.bundler_install_command("tools/Gemfile", LogStash::Environment::BUNDLE_DIR)
+        cmd = LogStash::Environment.bundler_install_command("tools/Gemfile", LogStash::Environment::BUNDLE_DIR)
         system(env, *cmd)
 
         # because --path creates a .bundle/config file and changes bundler path
