@@ -1,5 +1,6 @@
-
 $: << File.join(File.dirname(__FILE__), "lib")
+require 'logstash/environment'
+LogStash::Environment.set_gems_path!
 
 task "default" => "help"
 
