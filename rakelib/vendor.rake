@@ -92,6 +92,11 @@ namespace "vendor" do
   task "all" => "jruby"
   task "test" => "jruby"
 
+  task "minimal-gems" do |task, args|
+    Rake::Task["dependency:jar-dependencies"].invoke
+    Rake::Task["dependency:bundler"].invoke
+  end
+
   task "kibana" do |task, args|
     name = task.name.split(":")[1]
     info = DOWNLOADS[name]
@@ -117,9 +122,6 @@ namespace "vendor" do
   end
 
   task "gems", [:bundle] do |task, args|
-    require "logstash/environment"
-    Rake::Task["dependency:rbx-stdlib"] if LogStash::Environment.ruby_engine == "rbx"
-    Rake::Task["dependency:stud"].invoke
     Rake::Task["vendor:bundle"].invoke("Gemfile") if args.to_hash.empty? || args[:bundle]
   end # task gems
   task "all" => "gems"

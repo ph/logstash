@@ -105,3 +105,12 @@ gem 'logstash-output-statsd'
 gem 'logstash-output-stdout'
 gem 'logstash-output-tcp'
 gem 'logstash-output-udp'
+
+# Already defined in the gemspec
+#gem 'rbx-stdlib', :engine => 'rubinius'
+group :build do
+  gem 'stud'
+  gem 'rubyzip'
+  gem 'fpm'
+  gem 'minitar'
+end

@@ -6,6 +6,10 @@ namespace "dependency" do
     require "logstash/bundler_patch"
   end
 
+  task "jar-dependencies" do
+    Rake::Task["gem:require"].invoke("jar-dependencies", ">= 0.1.7", LogStash::Environment.logstash_gem_home)
+  end # task jar-dependencies
+
   task "rbx-stdlib" do
     Rake::Task["gem:require"].invoke("rubysl", ">= 0", LogStash::Environment.logstash_gem_home)
   end # task rbx-stdlib
