@@ -104,19 +104,33 @@ module LogStash
       arguments = []
 
       if options[:install]
-        arguments << "install"
-        arguments << "--gemfile=#{LogStash::Environment::GEMFILE_PATH}"
-        arguments << ["--path", LogStash::Environment::BUNDLE_DIR]
-        # note that generating "--without=" when options[:without] is empty is intended
-        arguments << "--without=#{options[:without].join(' ')}"
-      end
-
-      if options[:update]
-        arguments << "update"
-        arguments << options[:update]
+        arguments += bundler_install_arguments(options[:without])
+      elsif options[:update]
+        arguments += bundler_update_arguments(options[:update])
       end
 
       arguments << "--clean" if options[:clean]
+
+      arguments
+    end
+
+    def self.bundler_install_arguments(exclude_gems_group = [])
+      arguments = []
+
+      arguments << "install"
+      arguments << "--gemfile=#{LogStash::Environment::GEMFILE_PATH}"
+      arguments << ["--path", LogStash::Environment::BUNDLE_DIR]
+      # note that generating "--without=" when options[:without] is empty is intended
+      arguments << "--without=#{exclude_gems_group.join(' ')}"
+      
+      arguments.flatten
+    end
+
+    def self.bundler_update_arguments(plugins)
+      arguments = []
+      
+      arguments << "update"
+      arguments << plugins
 
       arguments.flatten
     end
