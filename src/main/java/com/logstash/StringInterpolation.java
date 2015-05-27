@@ -1,12 +1,18 @@
 package com.logstash;
 
+import com.sun.javafx.tools.ant.DeployFXTask;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 public class StringInterpolation {
     static Map cache;
+    static Pattern OPEN_TAG = Pattern.compile("%{}");
+    static Pattern CLOSE_TAG = Pattern.compile("}");
 
     private static class HoldCurrent {
         private static final StringInterpolation INSTANCE = new StringInterpolation();
@@ -27,8 +33,10 @@ public class StringInterpolation {
 
         StringBuffer results = new StringBuffer();
 
-        for(TemplateNode node: nodes)
-            results.append(node.evaluate(event));
+
+        for (int i = 0; i < nodes.size(); i++) {
+            results.append(((TemplateNode) nodes.get(i)).evaluate(event));
+        }
 
         return results.toString();
     }
@@ -36,15 +44,18 @@ public class StringInterpolation {
     public List compile(String template) {
         List nodes = new ArrayList<TemplateNode>();
 
+        Scanner scanner = new Scanner(template);
+        String content;
 
-        // implement actual string parsing here
-        nodes.add(new StaticNode("/bonjour-lafamille"));
-        nodes.add(new KeyNode("type"));
-        nodes.add(new StaticNode("/"));
-        nodes.add(new DateNode("YYYY-dd-mm"));
-        nodes.add(new StaticNode("/moreinfo"));
+        bf = BufferedReader.new(template);
+
+
 
         return nodes;
+    }
+
+    public TemplateNode identifyTag(String tag) {
+        return new KeyNode("awesome");
     }
 
     public static StringInterpolation getInstance() {

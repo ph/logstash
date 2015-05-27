@@ -233,7 +233,7 @@ class LogStash::Event
     end
 
     return format.gsub(/%\{[^}]+\}/) do |tok|
-      # Take the inside of the %{ ... }
+      h# Take the inside of the %{ ... }
       key = tok[2 ... -1]
 
       if key[0] == "+" && !@data.has_key?(TIMESTAMP)
