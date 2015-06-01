@@ -6,7 +6,10 @@ package com.logstash;
 public class EpochNode implements TemplateNode {
     public EpochNode(){ }
 
+    @Override
     public String evaluate(Event event) {
-        return String.valueOf(event.getTimestamp().toEpoch());
+        // TODO: Change this for the right call
+        Long epoch = 1L;
+        return String.valueOf(epoch);
     }
 }

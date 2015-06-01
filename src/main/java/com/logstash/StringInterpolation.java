@@ -1,64 +1,83 @@
 package com.logstash;
 
-import com.sun.javafx.tools.ant.DeployFXTask;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class StringInterpolation {
+    static Pattern TEMPLATE_TAG = Pattern.compile("%\\{([^}]+)\\}");
     static Map cache;
-    static Pattern OPEN_TAG = Pattern.compile("%{}");
-    static Pattern CLOSE_TAG = Pattern.compile("}");
 
-    private static class HoldCurrent {
+    protected static class HoldCurrent {
         private static final StringInterpolation INSTANCE = new StringInterpolation();
     }
 
     private StringInterpolation() {
+        // TODO: this may need some tweaking for the concurrency level to get better memory usage.
         this.cache = new ConcurrentHashMap<>();
     }
 
     public String evaluate(Event event, String template) {
-        List nodes = (List<TemplateNode>) cache.get(template);
+        TemplateNode compiledTemplate = (TemplateNode) this.cache.get(template);
 
-        if(nodes == null) {
-            nodes = this.compile(template);
-            List set = (List<TemplateNode>) cache.putIfAbsent(template, nodes);
-            nodes = (set != null) ? set : nodes;
+        if(compiledTemplate == null) {
+            compiledTemplate = this.compile(template);
+            TemplateNode set = (TemplateNode) this.cache.putIfAbsent(template, compiledTemplate);
+            compiledTemplate = (set != null) ? set : compiledTemplate;
         }
 
-        StringBuffer results = new StringBuffer();
+        return compiledTemplate.evaluate(event);
+    }
 
+    public TemplateNode compile(String template) {
+        Template compiledTemplate = new Template();
 
-        for (int i = 0; i < nodes.size(); i++) {
-            results.append(((TemplateNode) nodes.get(i)).evaluate(event));
+        if (template.indexOf('%') == -1) {
+            // Move the nodes to a custom instance
+            // so we can remove the iterator and do one `.evaluate`
+            compiledTemplate.add(new StaticNode(template));
+        } else {
+            Matcher matcher = TEMPLATE_TAG.matcher(template);
+            String tag;
+            int pos = 0;
+
+            while (matcher.find()) {
+                if (matcher.start() > 0) {
+                    compiledTemplate.add(new StaticNode(template.substring(pos, matcher.start())));
+                    pos = matcher.end();
+                }
+
+                tag = matcher.group(1);
+                compiledTemplate.add(identifyTag(tag));
+            }
+
+            if(pos < template.length() - 1) {
+                compiledTemplate.add(new StaticNode(template.substring(pos)));
+            }
         }
 
-        return results.toString();
+        // if we only have one node return the node directly
+        // and remove the need to loop.
+        if(compiledTemplate.size() == 1) {
+            return compiledTemplate.get(0);
+        } else {
+            return compiledTemplate;
+        }
     }
 
-    public List compile(String template) {
-        List nodes = new ArrayList<TemplateNode>();
-
-        Scanner scanner = new Scanner(template);
-        String content;
-
-        bf = BufferedReader.new(template);
-
-
-
-        return nodes;
-    }
-
+    // TODO: add support for array, hash, float and epoch
     public TemplateNode identifyTag(String tag) {
-        return new KeyNode("awesome");
+        // Doesnt support parsing the float yet
+        if(tag.charAt(0) == '+') {
+            return new DateNode(tag.substring(1));
+        } else {
+            return new KeyNode(tag);
+        }
     }
 
-    public static StringInterpolation getInstance() {
+    static StringInterpolation getInstance() {
         return HoldCurrent.INSTANCE;
     }
 }

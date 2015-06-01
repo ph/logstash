@@ -1,9 +1,6 @@
 package com.logstash;
 
-<<<<<<< HEAD
 import org.joda.time.DateTime;
-
-=======
 
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.joda.time.DateTime;
@@ -16,7 +13,6 @@ import org.jruby.RubyString;
 import java.util.Date;
 
 @JsonSerialize(using = TimestampSerializer.class)
->>>>>>> upstream/feature/java_backend
 public class Timestamp {
 
     private DateTime time;
@@ -66,10 +62,5 @@ public class Timestamp {
     public String toString() {
         return toIso8601();
     }
-<<<<<<< HEAD
-    public DateTime toDatetime() { return new DateTime(); }
-    public Integer toEpoch() { return 911; }
+
 }
-=======
- }
->>>>>>> upstream/feature/java_backend

@@ -14,7 +14,14 @@ public class KeyNode implements TemplateNode {
      This will be more complicated with hash and array.
      leverage jackson lib to do the actual.
      */
+    @Override
     public String evaluate(Event event) {
-        return String.valueOf(event.getField(this.key));
+        Object value = event.getField(this.key);
+
+        if (value != null) {
+            return String.valueOf(event.getField(this.key));
+        } else {
+            return "%{" + this.key + "}";
+        }
     }
 }

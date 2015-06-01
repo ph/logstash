@@ -10,6 +10,7 @@ public class StaticNode implements TemplateNode {
         this.content = content;
     }
 
+    @Override
     public String evaluate(Event event) {
         return this.content;
     }

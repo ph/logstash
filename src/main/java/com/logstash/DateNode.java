@@ -14,7 +14,8 @@ public class DateNode implements TemplateNode {
         this.formatter = DateTimeFormat.forPattern(format).withZone(DateTimeZone.UTC);
     }
 
+    @Override
     public String evaluate(Event event) {
-        return event.getTimestamp().toDateTime().toString(this.formatter);
+        return event.getTimestamp().getTime().toString(this.formatter);
     }
 }
