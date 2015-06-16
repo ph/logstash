@@ -13,6 +13,9 @@ require "logstash/filters/base"
 require "logstash/outputs/base"
 require "logstash/version"
 
+# Extract the parser
+# Extract the template
+
 class LogStashConfigDocGenerator
   COMMENT_RE = /^ *#(?: (.*)| *$)/
 
