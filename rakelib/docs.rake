@@ -22,4 +22,11 @@ namespace "docs" do
     end
   end
 
+  task "doc" do
+    require "lib/logstash/docgen/parser"
+
+    # context = LogStash::Docgen::Parser.parse("vendor/bundle/jruby/1.9/gems/logstash-input-stdin-0.1.6/lib/logstash/inputs/stdin.rb")
+    context = LogStash::Docgen::Parser.parse("vendor/bundle/jruby/1.9/gems/logstash-input-s3-0.1.11/lib/logstash/inputs/s3.rb")
+    LogStash::Docgen::HelpFormat.generate(context)
+  end
 end
