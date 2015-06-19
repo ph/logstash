@@ -18,6 +18,7 @@ require "pluginmanager/install"
 require "pluginmanager/uninstall"
 require "pluginmanager/list"
 require "pluginmanager/update"
+require "pluginmanager/help"
 
 module LogStash
   module PluginManager
@@ -28,6 +29,7 @@ module LogStash
       subcommand "uninstall", "Uninstall a plugin", LogStash::PluginManager::Uninstall
       subcommand "update", "Install a plugin", LogStash::PluginManager::Update
       subcommand "list", "List all installed plugins", LogStash::PluginManager::List
+      subcommand "help", "List this plugins options", LogStash::PluginManager::Help
     end
   end
 end

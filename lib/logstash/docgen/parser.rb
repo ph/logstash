@@ -1,6 +1,6 @@
 module LogStash::Docgen
   class PluginContext
-    attr_accessor :description, :config_name, :config
+    attr_accessor :description, :config_name
   
     def initialize
       @config = Hash.new({})
@@ -8,6 +8,10 @@ module LogStash::Docgen
 
     def add_config(name, description, attributes = {})
       @config[name] = { :description => description, :attributes => attributes }
+    end
+
+    def config
+      @config
     end
   end
 
@@ -109,7 +113,7 @@ module LogStash::Docgen
   #
   # doc representation
   class HelpFormat
-    def self.generate(context)
+    def generate(context)
       puts context.config_name
       puts "\n\n"
       puts context.description
