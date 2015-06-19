@@ -1,5 +1,6 @@
 require "logstash/errors"
 require "logstash/version"
+require "rubygems"
 
 module LogStash
   module Environment
