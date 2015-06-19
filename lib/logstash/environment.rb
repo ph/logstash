@@ -78,7 +78,7 @@ module LogStash
     end
 
     def windows?
-      Gem.win_platform?
+      ::Gem.win_platform?
     end
 
     def vendor_path(path)
