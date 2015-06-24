@@ -9,7 +9,6 @@ class LogStash::PluginManager::Help < LogStash::PluginManager::Command
     signal_usage_error("You have to specify a plugin") unless plugin
     signal_usage_error("This plugin doesn't exist") unless plugin_paths
 
-    puts plugin_paths.inspect
     context = LogStash::Docgen::Parser.parse(plugin_paths.first)
     help = LogStash::Docgen::HelpFormat.new()
     help.generate(context)

@@ -1,0 +1,62 @@
+module Docgen
+  # This class only do the static parsing
+  # options and comments
+  class Parser
+    COMMENT_RE = /^ *#(?: (.*)| *$)/
+    COMMENTS_IGNORE = ["encoding: utf-8"]
+
+      def initialize
+        @rules = {
+          COMMENT_RE => lambda { |m| add_comment(m[1]) },
+          /^ *class.*< *(::)?LogStash::(Outputs|Filters|Inputs|Codecs)::(Base|Threadable)/ => lambda { |m| set_class_description },
+          /^ *config +[^=].*/ => lambda { |m| add_config(m[0]) },
+          /^ *config_name .*/ => lambda { |m| set_config_name(m[0]) },
+          /^ *(class|def|module) / => lambda { |m| clear_comments },
+        }
+
+        @comments = []
+    end
+
+    def self.parse(file)
+    end
+
+    def ignore_comment?(comment)
+      COMMENTS_IGNORE.include?(comment)
+    end
+
+    # callbacks
+    def add_comment(comment)
+      return if ignore_comment?(comment)
+    end
+
+    def add_config(config)
+    end
+
+    def add_config_name(name)
+    end
+
+    def clear_comments
+    end
+  end
+
+  # Takes all the `config` statement and make sure 
+  # we get the dynamic values from the  ruby code.
+  # 
+  class DynamicParser
+    def initialize
+      @attributes = {}
+    end
+
+    def self.parse(file)
+      new.parse
+    end
+  end
+
+  class AsciiDoc
+  end
+
+  class HelpFormat
+    def generate()
+    end
+  end
+end

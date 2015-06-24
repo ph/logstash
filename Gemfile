@@ -8,9 +8,17 @@ gem "ci_reporter_rspec", "1.0.0", :group => :development
 gem "simplecov", :group => :development
 gem "coveralls", :group => :development
 gem "rspec", "~> 3.1.0", :group => :development
-gem "logstash-devutils", "~> 0", :group => :development
+gem "logstash-devutils", ">= 0"
 gem "octokit", "3.8.0", :group => :build
 gem "stud", "~> 0.0.19", :group => :build
 gem "fpm", "~> 1.3.3", :group => :build
 gem "rubyzip", "~> 1.1.7", :group => :build
 gem "gems", "~> 0.8.3", :group => :build
+gem "logstash-filter-clone"
+gem "logstash-filter-mutate"
+gem "logstash-filter-multiline"
+gem "logstash-input-generator"
+gem "logstash-input-stdin"
+gem "logstash-input-tcp"
+gem "logstash-output-stdout"
+gem "logstash-input-s3"

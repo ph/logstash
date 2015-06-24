@@ -1,0 +1,102 @@
+module LogStash::Docgen
+  class Context
+    attr_accessor :description, :config_name
+  end
+
+  # This class only do the static parsing
+  # options and comments
+  class Parser
+    COMMENT_RE = /^ *#(?: (.*)| *$)/
+    COMMENTS_IGNORE = ["encoding: utf-8"]
+
+    def initialize
+      @rules = {
+        COMMENT_RE => lambda { |m| add_comment(m[1]) },
+        /^ *class.*< *(::)?LogStash::(Outputs|Filters|Inputs|Codecs)::(Base|Threadable)/ => lambda { |m| set_class_description },
+        /^ *config +[^=].*/ => lambda { |m| add_config(m[0]) },
+        /^ *config_name .*/ => lambda { |m| set_config_name(m[0]) },
+        /^ *(class|def|module) / => lambda { |m| reset_buffer },
+      }
+
+      @context = Context.new
+
+      reset_buffer
+    end
+
+    def set_class_description
+      @context.description = @buffer.join("\n")
+      reset_buffer
+    end
+
+    def set_config_name(name)
+      @context.config_name = name
+    end
+
+    def parse(file)
+      string = File.read(file)
+
+      buffer = ""
+      string.split(/\r\n|\n/).each do |line|
+        # Join long lines
+        if line =~ COMMENT_RE
+          # nothing
+        else
+          # Join extended lines
+          if line =~ /(, *$)|(\\$)|(\[ *$)/
+            buffer += line.gsub(/\\$/, "")
+            next
+          end
+        end
+
+        line = buffer + line
+        buffer = ""
+
+        parse_line(line)
+      end
+
+      return @context
+    end
+
+    def parse_line(line)
+      @rules.each do |re, action|
+        m = re.match(line)
+        action.call(m) if m
+      end 
+    end
+
+    def self.parse(file)
+      new.parse(file)
+    end
+
+    def ignore_comment?(comment)
+      COMMENTS_IGNORE.include?(comment)
+    end
+
+    # callbacks
+    def add_comment(comment)
+      return if ignore_comment?(comment)
+      @buffer << comment
+    end
+
+    def add_config(config)
+    end
+
+    def add_config_name(name)
+    end
+
+    def reset_buffer
+      @buffer = []
+    end
+  end
+
+  class AsciiDoc
+    def generate
+    end
+  end
+
+  class HelpFormat
+    def generate()
+    end
+  end
+end
+
