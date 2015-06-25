@@ -4,12 +4,11 @@ module LogStash::Docgen
     attr_reader :config
   
     def initialize
-      @config = Hash.new({ :description => "", :attributes => {} })
+      @config = Hash.new({})
     end
 
     def add_config(name, attributes = {}, description = nil)
-      @config[name][:description] = description if description
-      @config[name][:attributes] = @config[:name][:attributes].merge(attributes)
+      @config[name][:description] = description
     end
   end
 
@@ -88,7 +87,7 @@ module LogStash::Docgen
       extract_lines(string).each { |line| parse_line(line) }
 
       dynamic = DynamicParser.new(file, @context)
-      dynamic.parse
+      # dynamic.parse
 
       return @context
     end
@@ -141,6 +140,11 @@ module LogStash::Docgen
     end
   end
   
+  class Asciidoc
+    def generate(context)
+    end
+  end
+
   #
   # doc representation
   class HelpFormat
