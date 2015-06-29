@@ -1,7 +1,10 @@
 require "lib/logstash/docgen/parser"
+require "stud/temporary"
+require "launchy"
 
 class LogStash::PluginManager::Help < LogStash::PluginManager::Command
   parameter "[PLUGIN]", "Display help for this plugin"
+  option "--asciidoc", :flag, "output an asciidoc"
 
   def execute
     LogStash::Bundler.setup!({:without => [:build, :development]})
@@ -10,8 +13,17 @@ class LogStash::PluginManager::Help < LogStash::PluginManager::Command
     signal_usage_error("This plugin doesn't exist") unless plugin_paths
 
     context = LogStash::Docgen::Parser.parse(plugin_paths.first)
-    help = LogStash::Docgen::HelpFormat.new()
-    help.generate(context)
+
+    if asciidoc?
+      tmpfile = Stud::Temporary.file
+      help = LogStash::Docgen::AsciidocFormat.new(:raw => false)
+      tmpfile.write(help.generate(context))
+      Launchy.open(tmpfile.path)
+    else
+      context = LogStash::Docgen::Parser.parse(plugin_paths.first)
+      help = LogStash::Docgen::HelpFormat.new()
+      puts help.generate(context)
+    end
   end
 
   def plugin_paths

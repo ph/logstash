@@ -24,6 +24,10 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "filesize", "0.0.4" #(MIT license) for :bytes config validator
   gem.add_runtime_dependency "gems", "~> 0.8.3"  #(MIT license)
 
+  # Doc generation
+  gem.add_runtime_dependency "asciidoctor"
+  gem.add_runtime_dependency "launchy"
+
   # TODO(sissel): Treetop 1.5.x doesn't seem to work well, but I haven't
   # investigated what the cause might be. -Jordan
   gem.add_runtime_dependency "treetop", "< 1.5.0" #(MIT license)

@@ -1,29 +1,40 @@
+require "logstash/environment"
+require "erb"
+require "asciidoctor"
+
+
 module LogStash::Docgen
   class PluginContext
-    CONFIG_DEFAULT_VALUES = { :attributes => {} }
-
-    attr_accessor :description, :config_name, :section, :class_name
+    attr_accessor :description, :config_name, :section, :name, :default_plugin
   
-    def initialize
+    def initialize(options = {})
       @config = {}
+      @options = options
+    end
+    
+    def default_plugin
+      @options.fetch(:default_plugin, true)
     end
 
     def add_config_description(name, description)
-      puts [name, description].join(' -- ')
-      @config[name] ||= CONFIG_DEFAULT_VALUES
-      @config[name][:description] = description
+      @config[name] ||= { }
+      @config[name].merge!({ :description => description })
     end
 
     def add_config_attributes(name, attributes = {})
-      @config[name] ||= CONFIG_DEFAULT_VALUES
-      @config[name][:attributes] = attributes
+      @config[name] ||= {}
+      @config[name].merge!(attributes)
     end
 
     # Developper can declare options in the order they want
     # `Hash` keys are sorted by default in the order of creation.
     def config
-      # @config.sort_by { |k, v| k }
-      @config
+      Hash[@config.sort_by(&:first)]
+    end
+    alias_method :sorted_attributes, :config
+
+    def get_binding
+      binding
     end
   end
 
@@ -45,17 +56,16 @@ module LogStash::Docgen
       klass.get_config.each do |name, attributes|
         @context.add_config_attributes(name, attributes)
       end
-
-      extract_modules_source_location
     end
     
     # Find all the modules included by the specified class
     # and use `source_location` to find the actual file on disk.
     # We need to cleanup the values for evalued modules or system module.
     # `included_modules` will return the list of module in the order they appear.
-    # this is important because modules can override the documentation of some option.
-    def extract_modules_source_location
-      klass.included_modules
+    # this is important because modules can override the documentation of some
+    # option.
+    def extract_sources_location
+      klass.ancestors
         .collect { |m| m.instance_methods.collect { |method| m.instance_method(method).source_location } }
         .compact
         .collect(&:first)
@@ -64,8 +74,9 @@ module LogStash::Docgen
         .reject { |source| !source.is_a?(String) || source == "(eval)" }
     end
 
+    private
     def klass
-      @klass ||= @context.class_name.split('::').inject(Object) do |memo,name|
+      @klass ||= @context.name.split('::').inject(Object) do |memo,name|
         memo = memo.const_get(name); memo
       end
     end
@@ -94,7 +105,7 @@ module LogStash::Docgen
 
     def parse_class_description(class_definition)
       @context.section = class_definition[3].downcase.gsub(/s$/, '')
-      @context.class_name = class_definition[1]
+      @context.name = class_definition[1]
       @context.description = flush_buffer
     end
 
@@ -163,8 +174,8 @@ module LogStash::Docgen
   end
 
   class Parser
-    def self.parse(file)
-      context =  PluginContext.new
+    def self.parse(file, options = { :default_plugin => true })
+      context =  PluginContext.new(options)
 
       # This is a 3 phases parsing.
       # - static
@@ -175,13 +186,30 @@ module LogStash::Docgen
 
       dynamic = DynamicParser.new(file, context)
       dynamic.parse
-      dynamic.extract_modules_source_location.each { |f| static.parse(f) }
+      dynamic.extract_sources_location.each { |f| static.parse(f) }
       context
     end
   end
   
-  class Asciidoc
+  class AsciidocFormat
+    TEMPLATE_FILE = File.join(LogStash::Environment::LOGSTASH_HOME, "docs", "plugin-doc.asciidoc.erb")
+
+    def initialize(options = {})
+      @options = options
+      @template = read_template(TEMPLATE_FILE)
+    end
+
     def generate(context)
+      if @options.fetch(:raw, true)
+        @template.result(context.get_binding)
+      else
+        Asciidoctor.convert(@template.result(context.get_binding), :header_footer => true)
+      end
+    end
+
+    private
+    def read_template(file)
+      ERB.new(File.read(file), nil, "-")
     end
   end
 
@@ -189,7 +217,7 @@ module LogStash::Docgen
   # doc representation
   class HelpFormat
     def generate(context)
-      puts context.section + " " + context.class_name
+      puts context.section + " " + context.name
       puts "\n\n"
       puts context.config_name
       puts "\n\n"
@@ -198,7 +226,7 @@ module LogStash::Docgen
       
       context.config.each do |name, options|
         puts name
-        puts options.inspect
+        puts options[:description]
         puts "\n\n"
       end
     end
