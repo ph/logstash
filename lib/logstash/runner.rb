@@ -52,22 +52,6 @@ class LogStash::Runner
         require "pry"
         return binding.pry
       end,
-      "docgen" => lambda do
-        require 'docs/asciidocgen'
-        opts = OptionParser.new
-        settings = {}
-        opts.on("-o DIR", "--output DIR",
-          "Directory to output to; optional. If not specified,"\
-          "we write to stdout.") do |val|
-          settings[:output] = val
-        end
-        args = opts.parse(ARGV)
-        docs = LogStashConfigAsciiDocGenerator.new
-        args.each do |arg|
-          docs.generate(arg, settings)
-        end
-        return 0
-      end,
       "agent" => lambda do
         require "logstash/agent"
         # Hack up a runner
