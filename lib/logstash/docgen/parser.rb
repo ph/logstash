@@ -192,7 +192,9 @@ module LogStash::Docgen
   end
   
   class AsciidocFormat
-    TEMPLATE_FILE = File.join(LogStash::Environment::LOGSTASH_HOME, "docs", "plugin-doc.asciidoc.erb")
+    TEMPLATE_PATH = File.join(LogStash::Environment::LOGSTASH_HOME, "docs", "templates")
+    TEMPLATE_FILE = File.join(TEMPLATE_PATH, "plugin-doc.asciidoc.erb")
+    CSS_FILE = File.join(TEMPLATE_PATH, "plugin-doc.css")
 
     def initialize(options = {})
       @options = options
@@ -200,10 +202,11 @@ module LogStash::Docgen
     end
 
     def generate(context)
+      erb = @template.result(context.get_binding)
       if @options.fetch(:raw, true)
-        @template.result(context.get_binding)
+        erb
       else
-        Asciidoctor.convert(@template.result(context.get_binding), :header_footer => true)
+        Asciidoctor.convert(erb, :header_footer => true, :stylesheet => CSS_FILE, :safe => 'safe')
       end
     end
 
