@@ -1,5 +1,4 @@
-namespace "docs" do
-
+namespace :docs do
   task "generate" do
     Rake::Task['plugin:install-all'].invoke
     Rake::Task['docs:generate-docs'].invoke

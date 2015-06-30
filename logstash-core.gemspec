@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.homepage      = "http://www.elastic.co/guide/en/logstash/current/index.html"
   gem.license       = "Apache License (2.0)"
 
-  gem.files         = Dir.glob(["logstash-core.gemspec", "lib/logstash-core.rb", "lib/logstash/**/*.rb", "spec/**/*.rb", "locales/*"])
+  gem.files         = Dir.glob(["logstash-core.gemspec", "lib/logstash-core.rb", "lib/logstash/**/*.rb", "spec/**/*.rb", "locales/*", "rakelib/plugin_doc.rake"])
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.name          = "logstash-core"
   gem.require_paths = ["lib"]
