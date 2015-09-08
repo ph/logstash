@@ -1,4 +1,6 @@
 # encoding: utf-8
+require "bootstrap/environment"
+
 module LogStash
   module Rubygems
     extend self
@@ -41,7 +43,45 @@ module LogStash
           end
         end
       end
+
+      if LogStash::Environment.windows?
+        # Make sure `FileUtils.chmod` is a no op operation on windows when uncompressing the
+        # gems, we have seen unreliable install of gem like the `docker-api` see theses issues:
+        # https://github.com/elastic/logstash/issues/3829
+        # https://github.com/jruby/jruby/issues/2498
+        ::Gem::Package.class_exec do
+          def extract_tar_gz io, destination_dir, pattern = "*" # :nodoc:
+            open_tar_gz io do |tar|
+              tar.each do |entry|
+                next unless File.fnmatch pattern, entry.full_name, File::FNM_DOTMATCH
+
+                destination = install_location entry.full_name, destination_dir
+
+                FileUtils.rm_rf destination
+
+                mkdir_options = {}
+                mkdir_options[:mode] = entry.header.mode if entry.directory?
+                mkdir =
+                  if entry.directory? then
+                    destination
+                  else
+                    File.dirname destination
+                  end
+
+                FileUtils.mkdir_p mkdir, mkdir_options
+
+                open destination, 'wb' do |out|
+                  out.write entry.read
+                end if entry.file?
+
+                verbose destination
+              end
+            end
+          end
+        end
+      end
     end
+
 
     # Take a gem package and extract it to a specific target
     # @param [String] Gem file, this must be a path

@@ -32,6 +32,10 @@ module LogStash
       RUBY_ENGINE
     end
 
+    def windows?
+      RbConfig::CONFIG["host_os"] =~ /mswin|windows|cygwin|mingw/
+    end
+
     def logstash_gem_home
       ::File.join(BUNDLE_DIR, ruby_engine, gem_ruby_version)
     end
