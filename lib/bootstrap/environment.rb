@@ -33,7 +33,7 @@ module LogStash
     end
 
     def windows?
-      RbConfig::CONFIG["host_os"] =~ /mswin|windows|cygwin|mingw/
+      ::Gem.win_platform?
     end
 
     def logstash_gem_home

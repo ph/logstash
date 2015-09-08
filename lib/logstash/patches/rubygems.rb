@@ -1,3 +1,5 @@
+require "logstash/environment"
+
 # encoding: utf-8
 # monkey patch RubyGems to silence ffi warnings:
 #
@@ -33,6 +35,44 @@ if ::Gem::Version.new(::Gem::VERSION) >= ::Gem::Version.new("2.1.0") && ::Gem::V
         unresolved.clear
       end
       ::Gem.post_reset_hooks.each { |hook| hook.call }
+    end
+  end
+end
+
+
+if LogStash::Environment.windows?
+  # Make sure `FileUtils.chmod` is a no op operation on windows when uncompressing the
+  # gems, we have seen unreliable install of gem like the `docker-api` see theses issues:
+  # https://github.com/elastic/logstash/issues/3829
+  # https://github.com/jruby/jruby/issues/2498
+  ::Gem::Package.class_exec do
+    def extract_tar_gz io, destination_dir, pattern = "*" # :nodoc:
+      open_tar_gz io do |tar|
+        tar.each do |entry|
+          next unless File.fnmatch pattern, entry.full_name, File::FNM_DOTMATCH
+
+          destination = install_location entry.full_name, destination_dir
+
+          FileUtils.rm_rf destination
+
+          mkdir_options = {}
+          mkdir_options[:mode] = entry.header.mode if entry.directory?
+          mkdir =
+            if entry.directory? then
+              destination
+            else
+              File.dirname destination
+            end
+
+          FileUtils.mkdir_p mkdir, mkdir_options
+
+          open destination, 'wb' do |out|
+            out.write entry.read
+          end if entry.file?
+
+          verbose destination
+        end
+      end
     end
   end
 end
