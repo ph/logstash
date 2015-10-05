@@ -12,8 +12,12 @@ require "logstash/outputs/base"
 require "logstash/util/reporter"
 require "logstash/config/cpu_core_strategy"
 require "logstash/util/defaults_printer"
+require "LogStash/metrics/monitored_size_queue"
+require "multimeter"
 
 class LogStash::Pipeline
+  DEFAULT_QUEUE_SIZE = 20
+  attr_reader :metrics
 
   def initialize(configstr)
     @logger = Cabin::Channel.get(LogStash)
@@ -36,9 +40,13 @@ class LogStash::Pipeline
       raise
     end
 
-    @input_to_filter = SizedQueue.new(20)
+    @metrics = Multimeter.create_registry
+
+    @input_to_filter = create_input_to_filter_queue
+
     # if no filters, pipe inputs directly to outputs
-    @filter_to_output = filters? ? SizedQueue.new(20) : @input_to_filter
+    @filter_to_output = filters? ? create_filter_to_output_queue : @input_to_filter
+
     @settings = {
       "filter-workers" => LogStash::Config::CpuCoreStrategy.fifty_percent
     }
@@ -46,7 +54,16 @@ class LogStash::Pipeline
     # @ready requires thread safety since it is typically polled from outside the pipeline thread
     @ready = Concurrent::AtomicBoolean.new(false)
     @input_threads = []
+    
   end # def initialize
+
+  def create_input_to_filter_queue
+    LogStash::Metrics::MonitoredSizeQueue.new(SizedQueue.new(DEFAULT_QUEUE_SIZE), metrics, "input_to_filter")
+  end
+
+  def create_filter_to_output_queue
+    LogStash::Metrics::MonitoredSizeQueue.new(SizedQueue.new(DEFAULT_QUEUE_SIZE), metrics, "filter_to_output")
+  end
 
   def ready?
     @ready.value
