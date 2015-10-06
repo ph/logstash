@@ -12,7 +12,8 @@ require "logstash/outputs/base"
 require "logstash/util/reporter"
 require "logstash/config/cpu_core_strategy"
 require "logstash/util/defaults_printer"
-require "LogStash/metrics/monitored_size_queue"
+require "logstash/metrics/monitored_size_queue"
+require "logstash/metrics_collector"
 require "multimeter"
 
 class LogStash::Pipeline
@@ -40,7 +41,7 @@ class LogStash::Pipeline
       raise
     end
 
-    @metrics = Multimeter.create_registry
+    @metrics = LogStash::MetricsCollector.create
 
     @input_to_filter = create_input_to_filter_queue
 
