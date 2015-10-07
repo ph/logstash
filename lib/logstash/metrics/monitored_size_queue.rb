@@ -1,15 +1,18 @@
 # encoding: utf-8
 module LogStash module Metrics
   class MonitoredSizeQueue
-    attr_reader :queue, :counter
+    attr_reader :queue, :counter, :meter_in, :meter_out
 
     def initialize(queue, metrics, name = "default")
       @queue = queue
       @counter = metrics.counter("size_queue.#{name}")
+      @meter_in = metrics.meter("size_queue.#{name}.in")
+      @meter_out = metrics.meter("size_queue.#{name}.out")
     end
 
     def push(item)
       counter.inc
+      meter_in.mark
       queue << item
     end
     alias_method :enq, :push
@@ -17,6 +20,7 @@ module LogStash module Metrics
 
     def pop
       counter.dec
+      meter_out.mark
       queue.pop
     end
     alias_method :deq, :pop

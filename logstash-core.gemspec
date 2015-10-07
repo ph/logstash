@@ -25,7 +25,10 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "gems", "~> 0.8.3"  #(MIT license)
   gem.add_runtime_dependency "concurrent-ruby", "~> 0.9.1"
   gem.add_runtime_dependency "jruby-openssl", ">= 0.9.11" # Required to support TLSv1.2
+
+
   gem.add_runtime_dependency "multimeter", "2.0.0.rc4" # (Apache 2.0 License)
+  gem.add_runtime_dependency "slf4j-jars" # needed for JMX output
 
   # TODO(sissel): Treetop 1.5.x doesn't seem to work well, but I haven't
   # investigated what the cause might be. -Jordan

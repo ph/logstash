@@ -2,12 +2,14 @@
 require "logstash/namespace"
 require "logstash/logging"
 require "logstash/config/mixin"
+require "logstash/null_metric_collector"
 require "cabin"
 require "concurrent"
 
 class LogStash::Plugin
   attr_accessor :params
   attr_accessor :logger
+  attr_accessor :metrics
 
   NL = "\n"
 
@@ -23,9 +25,10 @@ class LogStash::Plugin
   end
 
   public
-  def initialize(params=nil)
+  def initialize(params=nil, metrics = LogStash::NullMetricCollector.new)
     @params = params
     @logger = Cabin::Channel.get(LogStash)
+    @metrics = metrics
   end
 
   # close is called during shutdown, after the plugin worker

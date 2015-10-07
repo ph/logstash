@@ -153,10 +153,10 @@ module LogStash; module Config; module AST
             #{name}_flush = lambda do |options, &block|
               @logger.debug? && @logger.debug(\"Flushing\", :plugin => #{name})
 
-              # TODO: METRICS
               events = #{name}.flush(options)
 
               return if events.nil? || events.empty?
+              metrics.count("#{name}.flush.events", events.size)
 
               @logger.debug? && @logger.debug(\"Flushing\", :plugin => #{name}, :events => events)
 

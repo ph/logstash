@@ -135,6 +135,7 @@ class LogStash::Filters::Base < LogStash::Plugin
     super
     config_init(params)
     @threadsafe = true
+    # @filter_timer = metrics.timer("filter.#{self.class.to_s}")
   end # def initialize
 
   public
@@ -146,6 +147,12 @@ class LogStash::Filters::Base < LogStash::Plugin
   def filter(event)
     raise "#{self.class}#filter must be overidden"
   end # def filter
+
+  def do_filter(event)
+    # @filter_timer.time do
+    filter(event)
+    # end
+  end
 
   # in 1.5.0 multi_filter is meant to be used in the generated filter function in LogStash::Config::AST::Plugin only
   # and is temporary until we refactor the filter method interface to accept events list and return events list,
@@ -160,7 +167,7 @@ class LogStash::Filters::Base < LogStash::Plugin
     events.each do |event|
       unless event.cancelled?
         result << event
-        filter(event){|new_event| result << new_event}
+        do_filter(event){|new_event| result << new_event}
       end
     end
     result

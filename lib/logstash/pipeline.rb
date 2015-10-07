@@ -28,6 +28,8 @@ class LogStash::Pipeline
       raise LogStash::ConfigurationError, grammar.failure_reason
     end
 
+    @metrics = LogStash::MetricsCollector.create
+
     # This will compile the config to ruby and evaluate the resulting code.
     # The code will initialize all the plugins and define the
     # filter and output methods.
@@ -41,7 +43,6 @@ class LogStash::Pipeline
       raise
     end
 
-    @metrics = LogStash::MetricsCollector.create
 
     @input_to_filter = create_input_to_filter_queue
 
@@ -188,8 +189,12 @@ class LogStash::Pipeline
 
   def inputworker(plugin)
     LogStash::Util::set_thread_name("<#{plugin.class.config_name}")
+
+    # should be done in the compiler
+    plugin.metrics = metrics
+
     begin
-      plugin.run(@input_to_filter)
+      plugin.do_run(@input_to_filter)
     rescue => e
       # if plugin is stopping, ignore uncatched exceptions and exit worker
       if plugin.stop?

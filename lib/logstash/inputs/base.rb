@@ -6,6 +6,7 @@ require "logstash/logging"
 require "logstash/config/mixin"
 require "logstash/codecs/base"
 require "logstash/util/decorators"
+require "logstash/metrics/monitor_output"
 
 # This is the base class for Logstash inputs.
 class LogStash::Inputs::Base < LogStash::Plugin
@@ -65,7 +66,7 @@ class LogStash::Inputs::Base < LogStash::Plugin
 
   public
   def initialize(params={})
-    super
+    super(params)
     @threadable = false
     @stop_called = Concurrent::AtomicBoolean.new(false)
     config_init(params)
@@ -115,6 +116,12 @@ class LogStash::Inputs::Base < LogStash::Plugin
     @logger.debug("stopping", :plugin => self)
     @stop_called.make_true
     stop
+  end
+
+  public
+  def do_run(queue)
+    monitor = LogStash::Metrics::MonitorOutput.new(queue, metrics, self.class.to_s)
+    run(monitor)
   end
 
   # stop? should never be overriden
