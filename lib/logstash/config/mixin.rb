@@ -363,7 +363,7 @@ module LogStash::Config::Mixin
         case validator
           when :codec
             if value.first.is_a?(String)
-              value = LogStash::Plugin.lookup("codec", value.first).new
+              value = LogStash::Plugin.lookup("codec", value.first).new({})
               return true, value
             else
               value = value.first

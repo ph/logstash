@@ -11,9 +11,9 @@ module LogStash module Metrics
     end
 
     def push(item)
+      queue << item
       counter.inc
       meter_in.mark
-      queue << item
     end
     alias_method :enq, :push
     alias_method :<<, :push

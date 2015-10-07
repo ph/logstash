@@ -20,15 +20,21 @@ class LogStash::Pipeline
   DEFAULT_QUEUE_SIZE = 20
   attr_reader :metrics
 
-  def initialize(configstr)
+  def initialize(configstr, options = {})
     @logger = Cabin::Channel.get(LogStash)
     grammar = LogStashConfigParser.new
     @config = grammar.parse(configstr)
+
+    @collect_metric = options.fetch(:collect_metric, true)
+
     if @config.nil?
       raise LogStash::ConfigurationError, grammar.failure_reason
     end
 
-    @metrics = LogStash::MetricsCollector.create
+
+    if collect_metric?
+      @metrics = LogStash::MetricsCollector.create
+    end
 
     # This will compile the config to ruby and evaluate the resulting code.
     # The code will initialize all the plugins and define the
@@ -43,11 +49,10 @@ class LogStash::Pipeline
       raise
     end
 
-
-    @input_to_filter = create_input_to_filter_queue
+    @input_to_filter = create_size_queue("input-to-filter")
 
     # if no filters, pipe inputs directly to outputs
-    @filter_to_output = filters? ? create_filter_to_output_queue : @input_to_filter
+    @filter_to_output = filters? ? create_size_queue("filter-to_output") : @input_to_filter
 
     @settings = {
       "filter-workers" => LogStash::Config::CpuCoreStrategy.fifty_percent
@@ -59,12 +64,18 @@ class LogStash::Pipeline
     
   end # def initialize
 
-  def create_input_to_filter_queue
-    LogStash::Metrics::MonitoredSizeQueue.new(SizedQueue.new(DEFAULT_QUEUE_SIZE), metrics, "input_to_filter")
+  def collect_metric?
+    @collect_metric
   end
 
-  def create_filter_to_output_queue
-    LogStash::Metrics::MonitoredSizeQueue.new(SizedQueue.new(DEFAULT_QUEUE_SIZE), metrics, "filter_to_output")
+  def create_size_queue(name)
+    queue = SizedQueue.new(DEFAULT_QUEUE_SIZE)
+
+    if collect_metric?
+      LogStash::Metrics::MonitoredSizeQueue.new(queue, metrics, name)
+    else
+      queue
+    end
   end
 
   def ready?
@@ -190,9 +201,6 @@ class LogStash::Pipeline
   def inputworker(plugin)
     LogStash::Util::set_thread_name("<#{plugin.class.config_name}")
 
-    # should be done in the compiler
-    plugin.metrics = metrics
-
     begin
       plugin.do_run(@input_to_filter)
     rescue => e
@@ -282,10 +290,12 @@ class LogStash::Pipeline
     @inputs.each(&:do_stop)
   end # def shutdown
 
-  def plugin(plugin_type, name, *args)
-    args << {} if args.empty?
+  def plugin(plugin_type, name, args = {})
+    args = {} if args.empty?
     klass = LogStash::Plugin.lookup(plugin_type, name)
-    return klass.new(*args)
+    require "pry"
+    binding.pry
+    return klass.new(args, metrics)
   end
 
   # for backward compatibility in devutils for the rspec helpers, this method is not used

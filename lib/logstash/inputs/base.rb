@@ -7,6 +7,7 @@ require "logstash/config/mixin"
 require "logstash/codecs/base"
 require "logstash/util/decorators"
 require "logstash/metrics/monitor_output"
+require "logstash/null_metric_collector"
 
 # This is the base class for Logstash inputs.
 class LogStash::Inputs::Base < LogStash::Plugin
@@ -65,8 +66,8 @@ class LogStash::Inputs::Base < LogStash::Plugin
   attr_accessor :threadable
 
   public
-  def initialize(params={})
-    super(params)
+  def initialize(params = {}, metrics = LogStash::NullMetricCollector.new)
+    super(params, metrics)
     @threadable = false
     @stop_called = Concurrent::AtomicBoolean.new(false)
     config_init(params)
@@ -85,9 +86,9 @@ class LogStash::Inputs::Base < LogStash::Plugin
     case @format
       when "plain"; # do nothing
       when "json"
-        @codec = LogStash::Plugin.lookup("codec", "json").new
+        @codec = LogStash::Plugin.lookup("codec", "json").new({}, metrics)
       when "json_event"
-        @codec = LogStash::Plugin.lookup("codec", "oldlogstashjson").new
+        @codec = LogStash::Plugin.lookup("codec", "oldlogstashjson").new({}, metrics)
     end
 
   end # def initialize
@@ -120,7 +121,7 @@ class LogStash::Inputs::Base < LogStash::Plugin
 
   public
   def do_run(queue)
-    monitor = LogStash::Metrics::MonitorOutput.new(queue, metrics, self.class.to_s)
+    monitor = LogStash::Metrics::MonitorOutput.new(queue, metrics, id)
     run(monitor)
   end
 

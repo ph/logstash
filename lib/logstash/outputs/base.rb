@@ -5,6 +5,7 @@ require "logstash/logging"
 require "logstash/plugin"
 require "logstash/namespace"
 require "logstash/config/mixin"
+require "logstash/null_metric_collector"
 require "uri"
 
 class LogStash::Outputs::Base < LogStash::Plugin
@@ -47,8 +48,8 @@ class LogStash::Outputs::Base < LogStash::Plugin
   end
 
   public
-  def initialize(params={})
-    super(params)
+  def initialize(params = {}, metrics = LogStash::NullMetricCollector.new)
+    super(params, metrics)
     config_init(params)
   end
 

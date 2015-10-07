@@ -3,14 +3,15 @@ require "logstash/namespace"
 require "logstash/event"
 require "logstash/plugin"
 require "logstash/logging"
+require "logstash/null_metric_collector"
 
 # This is the base class for logstash codecs.
 module LogStash::Codecs; class Base < LogStash::Plugin
   include LogStash::Config::Mixin
   config_name "codec"
 
-  def initialize(params={})
-    super
+  def initialize(params = {}, metrics = LogStash::NullMetricCollector.new)
+    super(params, metrics)
     config_init(params)
     register if respond_to?(:register)
   end

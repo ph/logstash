@@ -14,6 +14,13 @@ class LogStash::Plugin
   NL = "\n"
 
   public
+  # TODO: Add better logic and allow user to configure it
+  # should be run though a `humanize` method
+  def id
+    "#{self.class.to_s}-#{Time.now.to_i}"
+  end
+
+  public
   def hash
     params.hash ^
     self.class.name.hash
@@ -25,7 +32,7 @@ class LogStash::Plugin
   end
 
   public
-  def initialize(params=nil, metrics = LogStash::NullMetricCollector.new)
+  def initialize(params = nil, metrics = LogStash::NullMetricCollector.new)
     @params = params
     @logger = Cabin::Channel.get(LogStash)
     @metrics = metrics

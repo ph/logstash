@@ -5,6 +5,7 @@ require "logstash/logging"
 require "logstash/plugin"
 require "logstash/config/mixin"
 require "logstash/util/decorators"
+require "logstash/null_metric_collector"
 
 class LogStash::Filters::Base < LogStash::Plugin
   include LogStash::Config::Mixin
@@ -131,11 +132,15 @@ class LogStash::Filters::Base < LogStash::Plugin
   RESERVED = ["type", "tags", "exclude_tags", "include_fields", "exclude_fields", "add_tag", "remove_tag", "add_field", "remove_field", "include_any", "exclude_any"]
 
   public
-  def initialize(params)
-    super
+  def initialize(params, metrics = LogStash::NullMetricCollector.new)
+    super(params, metrics)
+
     config_init(params)
     @threadsafe = true
-    # @filter_timer = metrics.timer("filter.#{self.class.to_s}")
+
+    @filter_timer = metrics.timer("filter-#{id}")
+    @filter_meter_in = metrics.meter("filter-#{id}-in")
+    @filter_meter_out = metrics.meter("filter-#{id}-out")
   end # def initialize
 
   public
@@ -148,12 +153,6 @@ class LogStash::Filters::Base < LogStash::Plugin
     raise "#{self.class}#filter must be overidden"
   end # def filter
 
-  def do_filter(event)
-    # @filter_timer.time do
-    filter(event)
-    # end
-  end
-
   # in 1.5.0 multi_filter is meant to be used in the generated filter function in LogStash::Config::AST::Plugin only
   # and is temporary until we refactor the filter method interface to accept events list and return events list,
   # just list in multi_filter see https://github.com/elastic/logstash/issues/2872.
@@ -164,12 +163,16 @@ class LogStash::Filters::Base < LogStash::Plugin
   public
   def multi_filter(events)
     result = []
+    @filter_meter_in.mark(events.size)
     events.each do |event|
       unless event.cancelled?
         result << event
-        do_filter(event){|new_event| result << new_event}
+        @filter_timer.time do
+          filter(event){|new_event| result << new_event}
+        end
       end
     end
+    @filter_meter_out.mark(result.size)
     result
   end
 
