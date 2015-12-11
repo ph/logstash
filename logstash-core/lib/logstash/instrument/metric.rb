@@ -37,7 +37,7 @@ module LogStash module Instrument
     def namespace(sub_namespace)
       raise MetricNoNamespaceProvided if sub_namespace.nil? || sub_namespace.empty?
 
-      new_namespace = namespace_information.dup
+      new_namespace = namespace_information.clone
       new_namespace << sub_namespace
 
       Metric.new(collector, new_namespace)
