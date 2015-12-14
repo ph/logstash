@@ -11,6 +11,10 @@ describe LogStash::Instrument::MetricStore do
     it "store the object" do
       expect(subject.fetch_or_store(namespaces, key, counter)).to eq(counter)
     end
+
+    it "support a block as argument" do
+      expect(subject.fetch_or_store(namespaces, key) { counter }).to eq(counter)
+    end
   end
 
   context "when the metric object exist in the namespace"  do
@@ -38,5 +42,13 @@ describe LogStash::Instrument::MetricStore do
   end
 
   context "when retrieving metrics" do
+    context "when data doesnt exist it return an empty array" do
+    end
+
+    context "when data exist it return the values in an array" do
+      before do
+        subject.fetch_or_store(namespaces, key, counter)
+      end
+    end
   end
 end

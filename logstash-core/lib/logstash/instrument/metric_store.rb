@@ -19,10 +19,9 @@ module LogStash module Instrument
     # @param [Array] The path where the values should be located
     # @param [Object] The default object if the value is not found in the path
     # @return [Object] Return the new_value of the retrieve object in the tree
-    def fetch_or_store(namespaces, key, new_value)
-      fetch_or_store_namespaces(namespaces).fetch_or_store(key, new_value)
+    def fetch_or_store(namespaces, key, default_value = nil)
+      fetch_or_store_namespaces(namespaces).fetch_or_store(key, block_given? ? yield(key) : default_value)
     end
-
     
     # This method allow to retrieve values for a specific path,
     # It can also return a hash.
@@ -32,9 +31,13 @@ module LogStash module Instrument
     # @param [Array] The path where values should be located
     # @return nil if the values are not found
     def get(paths)
+      fetch_recursively(path)
     end
 
     private
+    def fetch_recursively(path)
+    end
+
     # This method iterate through the namespace path and try to find the corresponding 
     # value for the path, if the any part of the path is not found it will 
     # create it.
@@ -54,14 +57,22 @@ module LogStash module Instrument
       return path_map
     end
 
-    def fetch_or_store_namespace_recursively(map, remaining_paths, idx = 0)
-      current = remaining_paths[idx]
+    # Recursively fetch or create the namespace paths through the `MetricStove`
+    # This algorithm use an index to known which keys to search in the map.
+    # This doesn't cloning the array if we want to give a better feedback to the user
+    #
+    # @param [Concurrent::Map] Map to search for the key
+    # @param [Array] List of path to create
+    # @param [Fixnum] Which part from the list to create
+    #
+    def fetch_or_store_namespace_recursively(map, namespaces_path, idx = 0)
+      current = namespaces_path[idx]
       
       # we are at the end of the namespace path, break out of the recursion
       return map if current.nil?
 
       new_map = map.fetch_or_store(current) { Concurrent::Map.new }
-      return fetch_or_store_namespace_recursively(new_map, remaining_paths, idx + 1)
+      return fetch_or_store_namespace_recursively(new_map, namespaces_path, idx + 1)
     end
   end
 end; end
