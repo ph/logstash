@@ -8,14 +8,11 @@ require "thread"
 
 module LogStash module Instrument
   class Collector
-    # TODO: move to a timer based  API with concurrent ruby timer class
-    # Allow to accept an external flush
-    # When the flush is done we should not record any new metric
     include LogStash::Util::Loggable
     include Observable
     include Singleton
 
-    SNAPSHOT_ROTATION_TIME = 1 #seconds
+    SNAPSHOT_ROTATION_TIME = 1 # seconds
 
     def initialize
       @snapshot_rotation_mutex = Mutex.new
