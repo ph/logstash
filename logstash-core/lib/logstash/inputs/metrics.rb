@@ -4,6 +4,11 @@ require "logstash/inputs/base"
 require "logstash/instrument/collector"
 
 module LogStash module Inputs
+  # The Metrics inputs is responable of registring itself to the collector.
+  # The collector class will periodically emits new snapshot of the system,
+  # The metrics need to take that information and transform it into
+  # a `Logstash::Event`, which can be consumed by the shipper and send to
+  # Elasticsearch
   class Metrics < LogStash::Inputs::Base
     config_name "metrics"
 

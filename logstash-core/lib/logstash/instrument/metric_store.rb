@@ -24,7 +24,6 @@ module LogStash module Instrument
     end
     
     # This method allow to retrieve values for a specific path,
-    # It can also return a hash.
     #
     # Also support `*` as a globbing path
     #

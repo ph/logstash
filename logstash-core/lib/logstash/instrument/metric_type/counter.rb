@@ -3,7 +3,9 @@ require "concurrent"
 module LogStash module Instrument module MetricType
   class Counter
     attr_reader :key
-    def initialize(key, value = 0)
+
+    def initialize(namespaces, key, value = 0)
+      @namespaces = namespaces
       @key = key
 
       # This should be a `LongAdder`,
@@ -22,12 +24,20 @@ module LogStash module Instrument module MetricType
       @counter.decrement(value)
     end
 
-    def execute(namespace, key, type, action, value)
+    def execute(action, value = 1)
       @counter.send(action, value)
+    end
+
+    def value
+      @counter.value
     end
 
     def inspect
       "#{self.class.name} - key: #{key} value: #{@counter.value}"
+    end
+
+    def to_hash
+      { :namespaces => @namespaces, :key => @key, :value => value }
     end
   end
 end; end; end

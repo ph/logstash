@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "logstash/instrument/snapshot"
+require "logstash/instrument/metric_store"
 require "logstash/util/loggable"
 require "concurrent/map"
 require "observer"
@@ -7,6 +8,12 @@ require "singleton"
 require "thread"
 
 module LogStash module Instrument
+  # The Collector singleton is the single point of reference for all
+  # the metrics collection inside logstash, the metrics library will make
+  # direct calls to this class.
+  #
+  # This class is an observable responsable of periodically emitting view of the system
+  # to other components like the internal metrics pipelines.
   class Collector
     include LogStash::Util::Loggable
     include Observable
@@ -15,62 +22,40 @@ module LogStash module Instrument
     SNAPSHOT_ROTATION_TIME = 1 # seconds
 
     def initialize
-      @snapshot_rotation_mutex = Mutex.new
-      rotate_snapshot
+      @metric_store = MetricStore.new
     end
 
-    # This part of the code is called from multiple threads
-    # TODO: rename to record?
+    # The metric library will call this unique interface
+    # its the job of the collector to update the store with new metric
+    # of update the metric
+    #
+    # If there is a problem with the key or the type of metric we will record an error 
+    # but we wont stop processing events, theses errors are not considered fatal.
+    # 
     def push(*args)
-      snapshot.push(*args)
+      namespaces_path, key, type, other = args
+
+      begin
+        metric = @metric_store.fetch_or_store(namespaces_path, key) { concrete_class(type).new(namespaces_path, key) }
+        metric.execute(*other)
+        changed
+      rescue MetricStore::ConcurrentMapExpectedError => e
+        logger.error("Collector: Cannot record metric", :exception => e)
+      rescue NameError => e
+        logger.error("Collector: Cannot create concrete class for this metric type", :type => type, :namespaces_path => namespaces_path, :key => key, :stacktrace => e.backtrace)
+      end
     end
 
-    def self.snapshot_rotation_time=(time)
-      @snapshot_rotation_time = time
-    end
-
-    def self.snapshot_rotation_time
-      @snapshot_rotation_time || SNAPSHOT_ROTATION_TIME
+    def update(time, result, exception)
     end
 
     private
-    def roll_over?
-      Concurrent.monotonic_time - @last_rotation >= self.class.snapshot_rotation_time
-    end
-
-    def snapshot
-      # TODO: We currently sent delta to the observers.
-      # Should we keep the whole picture and send the updated state instead?
-      if roll_over? && @snapshot_rotation_mutex.try_lock 
-        # fair rotation of the snapshot done by the winning thread
-        # metric could be written in the previous snapshot.
-        # Since the snapshot isn't written right away
-        # the view of the snapshot should be consistent at the time of
-        # writing, if we don't receive any events for 5 secs we wont send it.
-        # This might be a problem, for time correlation.
-        logger.debug("Collector: Rotating snapshot", :last_rotation => @last_rotation) if logger.debug?
-
-        publish_snapshot
-        rotate_snapshot
-
-        @snapshot_rotation_mutex.unlock
-      end
-
-      @current_snapshot
-    end
-
-    def rotate_snapshot
-      @current_snapshot = Snapshot.new
-      update_last_rotation
-    end
-
-    def publish_snapshot
-      changed
-      notify_observers(Concurrent.monotonic_time, @current_snapshot) 
-    end
-
-    def update_last_rotation
-      @last_rotation = Concurrent.monotonic_time
+    # Use the string to generate a concrete class for this metrics
+    # 
+    # @param [String] The name of the class
+    # @raise
+    def concrete_class(type)
+      LogStash::Instrument::MetricType.const_get(type.capitalize)
     end
   end
 end; end
