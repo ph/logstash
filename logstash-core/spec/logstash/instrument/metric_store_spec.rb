@@ -60,7 +60,7 @@ describe LogStash::Instrument::MetricStore do
 
     it "converts all metric to `Logstash::Event`" do
       events = subject.to_events
-      expect(events).to eq(2)
+      expect(events.size).to eq(2)
       events.each do |event|
         expect(event).to be_kind_of(LogStash::Event)
       end

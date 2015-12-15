@@ -37,12 +37,17 @@ module LogStash module Instrument module MetricType
     end
 
     def to_hash
-      { "@timestamp" => created_at,
+      { 
         "node" => "mylogstash",
         "namespace" => @namespaces,
         "key" => @key,
         "type" => self.class.name,
-        "value" => value }
+        "value" => value 
+      }
+    end
+
+    def to_event(created_at = Time.now)
+      LogStash::Event.new(to_hash.merge({ "@timestamp" => created_at }))
     end
   end
 end; end; end
