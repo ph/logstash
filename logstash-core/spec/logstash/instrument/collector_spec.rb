@@ -21,8 +21,10 @@ describe LogStash::Instrument::Collector do
     let(:key) { :my_key }
 
     context "when the `MetricType` exist" do
-      it "store the metric" do
-        LogStash::Instrument::Collector.instance.push(namespaces_path, key, :counter, :increment)
+      [:counter].each do |type|
+        it "store the metric of type #{type}" do
+          LogStash::Instrument::Collector.instance.push(namespaces_path, key, type, :increment)
+        end
       end
     end
 
