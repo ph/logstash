@@ -1,5 +1,6 @@
 # encoding: utf-8
 require "concurrent"
+require "logstash/event"
 
 module LogStash module Instrument
   # The Metric store the data structure that make sure the data is
@@ -31,6 +32,10 @@ module LogStash module Instrument
     # @return nil if the values are not found
     def get(paths)
       fetch_recursively(path)
+    end
+
+    def to_event
+      LogStash::Event.new
     end
 
     private

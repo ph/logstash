@@ -32,8 +32,8 @@ module LogStash module Inputs
       LogStash::Instrument::Collector.instance.delete_observer(self)
     end
 
-    def update(time, snapshot)
-      @logger.debug("Metrics input: received a new snapshot", :snapshot => snapshot, :event => snapshot.to_event) if @logger.debug?
+    def update(time_of_snapshot, snapshot)
+      @logger.debug("Metrics input: received a new snapshot", :time_of_snapshot => time_of_snapshot, :snapshot => snapshot, :event => snapshot.to_event) if @logger.debug?
 
       # TODO: (ph)
       # - Obviously the format here is wrong and we need to
