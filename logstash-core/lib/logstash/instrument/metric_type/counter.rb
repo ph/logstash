@@ -37,7 +37,12 @@ module LogStash module Instrument module MetricType
     end
 
     def to_hash
-      { :namespaces => @namespaces, :key => @key, :value => value }
+      { "@timestamp" => created_at,
+        "node" => "mylogstash",
+        "namespace" => @namespaces,
+        "key" => @key,
+        "type" => self.class.name,
+        "value" => value }
     end
   end
 end; end; end

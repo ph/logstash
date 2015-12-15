@@ -34,12 +34,24 @@ module LogStash module Instrument
       fetch_recursively(path)
     end
 
-    def to_event
-      LogStash::Event.new
+    # Take all the individuals `MetricType` and convert them to `Logstash::Event`
+    #
+    # @return [Array] An array of all metric transformed in `Logstash::Event`
+    def to_events
+      to_events_recursively(@store).flatten
     end
 
     private
-    def fetch_recursively(path)
+    def to_events_recursively(values)
+      events = []
+      values.each_value do |value|
+        if value.is_a?(Concurrent::Map)
+          events << to_events_recursively(value) 
+        else
+          events << value.to_event
+        end
+      end
+      return events
     end
 
     # This method iterate through the namespace path and try to find the corresponding 

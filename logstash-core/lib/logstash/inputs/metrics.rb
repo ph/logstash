@@ -44,7 +44,10 @@ module LogStash module Inputs
       #   - We can use a synchronization mechanism between the called thread (update method)
       #   and the plugin thread (run method)
       #   - How we handle back pressure here?
-      @queue << snapshot.to_event
+      #   - one snashot should be only one event
+      snapshot.to_events.each do |event|
+        @queue << event
+      end
     end
   end
 end;end
