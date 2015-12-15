@@ -34,16 +34,6 @@ module LogStash module Instrument
       collector.push(namespace_information, key, :gauge, value)
     end
 
-    def namespace(sub_namespace)
-      raise MetricNoNamespaceProvided if sub_namespace.nil? || sub_namespace.empty?
-
-      new_namespace = namespace_information.clone
-      new_namespace << sub_namespace
-
-      Metric.new(collector, new_namespace)
-    end
-
-    # I think this should have his own values.
     def time(key, &block)
       validate_key!(key)
       if block_given?
@@ -56,6 +46,16 @@ module LogStash module Instrument
         raise MetricNoBlockProvided
       end
     end
+
+    def namespace(sub_namespace)
+      raise MetricNoNamespaceProvided if sub_namespace.nil? || sub_namespace.empty?
+
+      new_namespace = namespace_information.clone
+      new_namespace << sub_namespace
+
+      Metric.new(collector, new_namespace)
+    end
+
 
     def self.create(namespace, collector = LogStash::Instrument::Collector.instance)
       reporter = LogStash::Instrument::Reporter::Stdout.new(collector)
