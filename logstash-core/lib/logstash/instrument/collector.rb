@@ -2,7 +2,7 @@
 require "logstash/instrument/snapshot"
 require "logstash/instrument/metric_store"
 require "logstash/util/loggable"
-require "concurrent/map"
+require "concurrent/timer_task"
 require "observer"
 require "singleton"
 require "thread"
@@ -89,7 +89,7 @@ module LogStash module Instrument
 
     # Configure and start the periodic task for snapshotting the `MetricStore`
     def start_periodic_snapshotting
-      @snapshot_task = Concurrent::Task.new { publish_snapshot }
+      @snapshot_task = Concurrent::TimerTask.new { publish_snapshot }
       @snapshot_task.execution_interval = SNAPSHOT_ROTATION_TIME
       @snapshot_task.timeout_interval = SNAPSHOT_ROTATION_TIME_TIMEOUT
       @snapshot_task.add_observer(self)
