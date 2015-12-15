@@ -20,6 +20,7 @@ module LogStash module Instrument
     include Singleton
 
     SNAPSHOT_ROTATION_TIME = 1 # seconds
+    SNAPSHOT_ROTATION_TIME_TIMEOUT = 10 * 60 # seconds
 
     def initialize
       @metric_store = MetricStore.new
@@ -38,13 +39,19 @@ module LogStash module Instrument
       namespaces_path, key, type, other = args
 
       begin
-        metric = @metric_store.fetch_or_store(namespaces_path, key) { concrete_class(type).new(namespaces_path, key) }
+        metric = @metric_store.fetch_or_store(namespaces_path, key) do
+          concrete_class(type).new(namespaces_path, key)
+        end
         metric.execute(*other)
         changed # we had changes coming in so we can notify the observers
       rescue MetricStore::ConcurrentMapExpectedError => e
         logger.error("Collector: Cannot record metric", :exception => e)
       rescue NameError => e
-        logger.error("Collector: Cannot create concrete class for this metric type", :type => type, :namespaces_path => namespaces_path, :key => key, :stacktrace => e.backtrace)
+        logger.error("Collector: Cannot create concrete class for this metric type",
+                     :type => type,
+                     :namespaces_path => namespaces_path,
+                     :key => key,
+                     :stacktrace => e.backtrace)
       end
     end
 
@@ -62,6 +69,15 @@ module LogStash module Instrument
                    :exception => exception)
     end
 
+    # Snapshot the current Metric Store and return it immediately,
+    # This is useful if you want to get acecess to the current metric store without
+    # waiting for a periodic call.
+    # 
+    # @return [LogStash::Instrument::MetricStore]
+    def snapshot_metric
+      @metric_store.dup
+    end
+
     private
     # Use the string to generate a concrete class for this metrics
     # 
@@ -74,16 +90,20 @@ module LogStash module Instrument
     # Configure and start the periodic task for snapshotting the `MetricStore`
     def start_periodic_snapshotting
       @snapshot_task = Concurrent::Task.new { publish_snapshot }
-      @snapshot_task.interval = self.class.snapshot_time
+      @snapshot_task.execution_interval = SNAPSHOT_ROTATION_TIME
+      @snapshot_task.timeout_interval = SNAPSHOT_ROTATION_TIME_TIMEOUT
       @snapshot_task.add_observer(self)
       @snapshot_task.execute
     end
 
     # Create a snapshot of the MetricStore and send it to to the registered observers
+    # The observer will receive the following signature in the update methode.
+    #
+    # `#update(created_at, metric_store)`
     def publish_snapshot
-      time_created = Concurrent.monotonic
+      created_at = Concurrent.monotonic
       logger.debug("Collector: Sending snapshot to observers", :created_at => created_at) if logger.debug?
-      notify_observers(time_created, @metric_store.dup)
+      notify_observers(time_created, snapshot_metric)
     end
   end
 end; end
