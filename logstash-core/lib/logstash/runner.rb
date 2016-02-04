@@ -29,17 +29,17 @@ class LogStash::Runner < Clamp::Command
   option ["-w", "--pipeline-workers"], "COUNT",
     I18n.t("logstash.runner.flag.pipeline-workers"),
     :attribute_name => :pipeline_workers,
-    :default => LogStash::Pipeline::DEFAULT_SETTINGS[:default_pipeline_workers] {|s| validate_positive_integer(s) }
+    :default => LogStash::Pipeline::DEFAULT_SETTINGS[:default_pipeline_workers]
 
   option ["-b", "--pipeline-batch-size"], "SIZE",
          I18n.t("logstash.runner.flag.pipeline-batch-size"),
          :attribute_name => :pipeline_batch_size,
-         :default => LogStash::Pipeline::DEFAULT_SETTINGS[:pipeline_batch_size] {|s| validate_positive_integer(s) }
+         :default => LogStash::Pipeline::DEFAULT_SETTINGS[:pipeline_batch_size]
 
   option ["-u", "--pipeline-batch-delay"], "DELAY_IN_MS",
          I18n.t("logstash.runner.flag.pipeline-batch-delay"),
          :attribute_name => :pipeline_batch_delay,
-         :default => LogStash::Pipeline::DEFAULT_SETTINGS[:pipeline_batch_delay] {|s| validate_positive_integer(s) }
+         :default => LogStash::Pipeline::DEFAULT_SETTINGS[:pipeline_batch_delay]
 
   option ["-l", "--log"], "FILE",
     I18n.t("logstash.runner.flag.log"),
