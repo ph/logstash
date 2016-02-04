@@ -33,6 +33,12 @@ describe LogStash::Runner do
 
     context "with no arguments" do
       let(:args) { [] }
+      let(:agent) { double("agent") }
+
+      before(:each) do
+        allow(LogStash::Agent).to receive(:new).and_return(agent)
+      end
+
       it "should show help" do
         expect(subject).to receive(:show_short_help).once
         expect(channel).to receive(:fatal).once
