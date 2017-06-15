@@ -165,7 +165,7 @@ module LogStash
     end
 
     def pipeline_id
-      @pipeline_config.pipeline_id
+      @pipeline.getPipelineId();
     end
 
     # Have to decide what to do with them
