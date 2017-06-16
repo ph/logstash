@@ -347,7 +347,7 @@ class LogStash::Agent
         rescue SystemExit => e
           converge_result.add(action, e)
         rescue Exception => e
-          logger.error("Failed to execute action", :action => action, :exception => e.class.name, :message => e.message)
+          logger.error("Failed to execute action", :action => action, :exception => e.class.name, :message => e.message, :backtrace => e.backtrace)
           converge_result.add(action, e)
         end
       end
@@ -414,7 +414,7 @@ class LogStash::Agent
     end
 
     @periodic_pollers = LogStash::Instrument::PeriodicPollers.new(@metric, settings.get("queue.type"), self)
-    @periodic_pollers.start
+    #@periodic_pollers.start
   end
 
   def stop_collecting_metrics
