@@ -1,7 +1,7 @@
 package org.logstash.pipeline;
 
-import java.util.Map;
+import org.logstash.config.ir.PluginDefinition;
 
 public interface PluginFactory {
-    public BaseProcessor create(String pluginType, String pluginName, Map<String, String> settings);
+    public BaseProcessor create(PluginDefinition pluginDefinition);
 }

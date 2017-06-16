@@ -3,7 +3,6 @@ package org.logstash.pipeline;
 import org.logstash.config.ir.PipelineIR;
 import org.logstash.queue.ReadClient;
 import org.logstash.queue.WriteClient;
-import sun.plugin2.main.server.Plugin;
 
 public class Builder {
     private final PipelineIR pipelineIR;
@@ -30,7 +29,7 @@ public class Builder {
             throw new IllegalArgumentException("You need to specify a write client");
         }
 
-        return new Runner(pipelineId, pipelineIR, workersCount, readClient, writeClient);
+        return new Runner(pipelineId, pipelineIR, pluginFactory, workersCount, readClient, writeClient);
     }
 
     public Builder workers(int count) {

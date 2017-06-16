@@ -47,13 +47,21 @@ module LogStash
   class PluginFactory
     include org.logstash.pipeline.PluginFactory
 
-    def initialize(agent = nil, dlq_writer = nil, metric = nil)
+    attr_reader :pipeline_id
+
+    def initialize(pipeline_id, agent = nil, dlq_writer = nil, metric = nil)
+      @pipeline_id = pipeline_id
       @metric = metric
       @agent = agent
       @dlq_writer = dlq_writer
     end
 
-    def create(plugin_type, name, settings = {})
+    def create(plugin_definition)
+      name = plugin_definition.getName()
+      id = plugin_definition.getId()
+      plugin_type = plugin_definition.getType().toString();
+      args = plugin_definition.getArguments()
+
       # use NullMetric if called in the BasePipeline context otherwise use the @metric value
       metric = @metric || Instrument::NullMetric.new
 
@@ -64,6 +72,7 @@ module LogStash
       klass = Plugin.lookup(plugin_type, name)
 
       execution_context = ExecutionContext.new(self, @agent, id, klass.config_name, @dlq_writer)
+
 
       if plugin_type == "output"
         output_plugin = OutputDelegator.new(@logger, klass, type_scoped_metric, execution_context, OutputDelegatorStrategyRegistry.instance, args)
@@ -77,6 +86,10 @@ module LogStash
         scoped_metric.gauge(:name, input_plugin.config_name)
         input_plugin.metric = scoped_metric
         input_plugin.execution_context = execution_context
+
+
+        require "pry";binding.pry
+
         InputProcessor.new(input_plugin)
       end
     end
@@ -133,13 +146,10 @@ module LogStash
       #
       # - [ ] We need to validate the ID in the graph to make sure they are unique when user are defining there own IDs.
       # - [ ] Batch size is a properties of the queue reader, not a concern of the runner of the plugin reading off the queue
-
+      # - [ ] Add a plugin factory to create the instance in the ruby world
       @settings = pipeline_config.settings
       @pipeline_config = pipeline_config
 
-
-      # Add a plugin factory to replace `def plugin`, writing in the ruby world but with a java interface
-      # Add an interface to be able to use the Ruby Execution
       @queue = LogStash::QueueFactory.create(@settings)
 
       pipeline_ir = compile_ir(pipeline_config.config_string)
@@ -147,13 +157,10 @@ module LogStash
       @pipeline = org.logstash.pipeline.Builder.new(pipeline_ir)
                       .pipelineId(@pipeline_config.pipeline_id)
                       .workers(@settings.get("pipeline.workers"))
-                      .pluginFactory(PluginFactory.new)
+                      .pluginFactory(PluginFactory.new(@pipeline_config.pipeline_id))
                       .writeClient(@queue.write_client)
                       .readClient(@queue.read_client)
                       .build()
-
-      # I think the runner should not really care if its an inputs or an outputs
-      # this might complicate things because shutdown order is important
     end
 
     def running?

@@ -4,16 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.logstash.common.SourceWithMetadata;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.security.SecureRandom;
+import java.util.*;
 
 /**
  * Created by andrewvc on 9/20/16.
  */
 public class PluginDefinition implements SourceComponent, HashableWithSource {
     private static ObjectMapper om = new ObjectMapper();
+    private final String id;
 
     @Override
     public String hashSource() {
@@ -46,6 +45,7 @@ public class PluginDefinition implements SourceComponent, HashableWithSource {
     public String getName() {
         return name;
     }
+    public String getId() { return id; }
 
     public Map<String, Object> getArguments() {
         return arguments;
@@ -55,6 +55,10 @@ public class PluginDefinition implements SourceComponent, HashableWithSource {
         this.type = type;
         this.name = name;
         this.arguments = arguments;
+        this.id = retrieveId();
+
+        // Force the id on the ruby world
+        this.arguments.put("id", this.id);
     }
 
     public String toString() {
@@ -99,5 +103,14 @@ public class PluginDefinition implements SourceComponent, HashableWithSource {
     @Override
     public SourceWithMetadata getSourceWithMetadata() {
         return null;
+    }
+
+    private String retrieveId() {
+        String id = (String) arguments.get("id");
+        if(id == null) {
+            return name + "_" + UUID.randomUUID().toString();
+        } else {
+            return id;
+        }
     }
 }
