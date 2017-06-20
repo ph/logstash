@@ -58,6 +58,7 @@ public class PluginDefinition implements SourceComponent, HashableWithSource {
         this.id = retrieveId();
 
         // Force the id on the ruby world
+        // to make sure everything match
         this.arguments.put("id", this.id);
     }
 

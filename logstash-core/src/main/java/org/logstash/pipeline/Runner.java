@@ -9,6 +9,8 @@ import org.logstash.queue.WriteClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Runner {
     private static final Logger logger = LogManager.getLogger(Event.class);
@@ -20,9 +22,61 @@ public class Runner {
     private final ReadClient readClient;
     private final WriteClient writeClient;
 
-    private List<InputProcessor> inputs = new ArrayList<>();
-    private List<FilterProcessor> filters = new ArrayList<>();
-    private List<OutputProcessor> outputs = new ArrayList<>();
+    private List<BaseProcessor> inputs = new ArrayList<>();
+    private List<BaseProcessor> filters = new ArrayList<>();
+    private List<BaseProcessor> outputs = new ArrayList<>();
+
+    private final ExecutorService consumers;
+    private final ExecutorService producers;
+    // private final ExecutorService scheduledTasks;
+
+    class InputWorker implements Runnable {
+        private final WriteClient writeClient;
+        private final InputProcessor inputProcessor;
+
+        public InputWorker(InputProcessor inputProcessor, WriteClient writeClient) {
+            this.inputProcessor = inputProcessor;
+            this.writeClient = writeClient;
+        }
+
+        @Override
+        public void run() {
+            inputProcessor.process(writeClient);
+        }
+
+        public void shutdown() {}
+    }
+
+    class ProcessorWorker implements Runnable {
+        private final ReadClient readClient;
+        private final Execution execution;
+        private volatile boolean running = true;
+
+
+        public Worker(ReadClient readClient, Execution execution) {
+            this.readClient = readClient;
+            this.execution = execution;
+        }
+
+        @Override
+        public void run() {
+            // while not stopped read from queue
+            // execute
+            while(running) {
+                Batch batch = readClient.readBatch();
+                execution.execute(batch.getEvents);
+
+                // do stuff
+                // batch = queue.readBatch()
+                // events = batch.getEvents()
+                // execution.execution(events)
+            }
+        }
+
+        public void shutdown() {
+            running = false;
+        }
+    }
 
     public Runner(String pipelineId, PipelineIR pipelineIR, PluginFactory pluginFactory, int workersCount, ReadClient readClient, WriteClient writeClient) {
         this.pipelineId = pipelineId;
@@ -31,18 +85,22 @@ public class Runner {
         this.workersCount = workersCount;
         this.readClient = readClient;
         this.writeClient = writeClient;
+
+        createPlugins();
+
+        this.consumers = Executors.newFixedThreadPool(workersCount);
     }
 
     private void createInputs() {
-        pipelineIR.getInputPluginVertices().forEach(vertex -> inputs.add((InputProcessor) createPlugin(vertex.getPluginDefinition())));
+        pipelineIR.getInputPluginVertices().forEach(vertex -> inputs.add(createPlugin(vertex.getPluginDefinition())));
     }
 
     private void createFilters() {
-      //  pipelineIR.getFilterPluginVertices(pluginVertex -> filters.add(createPlugin(pluginVertex.getPluginDefinition())));
+        pipelineIR.getInputPluginVertices().forEach(vertex -> filters.add(createPlugin(vertex.getPluginDefinition())));
     }
 
     private void createOutputs() {
-   //     pipelineIR.getOutputPluginVertices(pluginVertex -> filters.add(createPlugin(pluginVertex.getPluginDefinition())));
+        pipelineIR.getInputPluginVertices().forEach(vertex -> outputs.add(createPlugin(vertex.getPluginDefinition())));
     }
 
     private void createPlugins() {
@@ -60,7 +118,6 @@ public class Runner {
     }
     public void stop() {}
     public boolean start() {
-       createPlugins();
        return true;
     }
 
