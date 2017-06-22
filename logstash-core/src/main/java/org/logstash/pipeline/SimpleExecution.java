@@ -8,22 +8,17 @@ import java.util.List;
 public class SimpleExecution implements Execution {
     private final PluginFactory publicFactory;
     private final PipelineIR ir;
-    private boolean stopped = false; // TODO need to be atomic.
-    private List<BaseProcessor> processors;
+    private boolean stopped = false;
 
     public SimpleExecution(PluginFactory pluginFactory, PipelineIR ir) {
         this.publicFactory = pluginFactory;
         this.ir = ir;
-        this.processors = createPlugins();
-
+        //this.processors = createPlugins();
         // Create / register plugin
         // compile the execution
 
     }
 
-    private List<BaseProcessor> createPlugins() {
-        ir.getFilterPluginVertices().forEach(filter -> pluginFactory.create());
-    }
 
     @Override
     public void process(Object batch) {
@@ -50,5 +45,9 @@ public class SimpleExecution implements Execution {
     @Override
     public boolean isStopped() {
         return false;
+    }
+
+    @Override
+    public void flush() {
     }
 }

@@ -9,4 +9,5 @@ public interface Execution {
     public void process(List<Event> events);
     public void stop();
     public boolean isStopped();
+    public void flush();
 }

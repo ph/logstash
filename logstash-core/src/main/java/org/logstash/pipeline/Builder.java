@@ -8,16 +8,18 @@ public class Builder {
     private final PipelineIR pipelineIR;
     private int workersCount = Runtime.getRuntime().availableProcessors();
     private String pipelineId = "main";
-    private PluginFactory pluginFactory;
     private ReadClient readClient;
     private WriteClient writeClient;
+    private Execution execution;
+    private InputSource inputSource;
 
-    public Builder(PipelineIR ir) {
-        pipelineIR = ir;
+    public Builder(Execution execution, InputSource inputSource) {
+        this.execution = execution;
+        this.inputSource = inputSource;
     }
 
     public Runner build() throws IllegalArgumentException {
-        if(pluginFactory  == null) {
+        if(execution == null) {
             throw new IllegalArgumentException("You need to specify a plugin factory");
         }
 
@@ -29,7 +31,7 @@ public class Builder {
             throw new IllegalArgumentException("You need to specify a write client");
         }
 
-        return new Runner(pipelineId, pipelineIR, pluginFactory, workersCount, readClient, writeClient);
+        return new Runner(pipelineId, execution, inputSource, workersCount, readClient, writeClient);
     }
 
     public Builder workers(int count) {
@@ -39,11 +41,6 @@ public class Builder {
 
     public Builder pipelineId(String id) {
         pipelineId = id;
-        return this;
-    }
-
-    public Builder pluginFactory(PluginFactory factory) {
-        pluginFactory = factory;
         return this;
     }
 

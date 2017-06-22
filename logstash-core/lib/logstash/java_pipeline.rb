@@ -81,21 +81,24 @@ module LogStash
       # - [ ] The queue can have signal too.
       # - [ ] for flushing we will need to still have 2 methods, 1 for outputs and 1 for filters
       # - [ ] Add a scheduled task thread poll http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html#commonPool--
+      # - [ ] Check for uncaught exception
+      # - [ ] Merge read/client and just pass the queue to the builder
+      # - [ ] Create InputSource
       #
       @settings = pipeline_config.settings
       @pipeline_config = pipeline_config
 
       @queue = LogStash::QueueFactory.create(@settings)
-
       pipeline_ir = compile_ir(pipeline_config.config_string)
+      plugin_factory = LogStash::Pipelines::PluginFactory.new
 
       @pipeline = org.logstash.pipeline.Builder.new(pipeline_ir)
                       .pipelineId(@pipeline_config.pipeline_id)
-                      .workers(@settings.get("pipeline.workers"))
-                      .pluginFactory(LogStash::Pipelines::PluginFactory.new(@pipeline_config.pipeline_id))
+                      .workers(@settings.get("pipeline.workers")
+                      .pluginFactory(plugin_factory)
                       .writeClient(@queue.write_client)
                       .readClient(@queue.read_client)
-                      .build()
+                      .build();
     end
 
     def running?
