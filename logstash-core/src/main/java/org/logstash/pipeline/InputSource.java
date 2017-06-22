@@ -19,6 +19,6 @@ public class InputSource {
     public Iterable<InputProcessor> getSources() {
         pipelineIR.getInputPluginVertices().stream()
                 .collect(PluginVertex::getPluginDefinition)
-                .map(pluginDefinition -> pluginFactory.create(pluginDefinition));
+                .map(pluginDfinition -> pluginFactory.create(pluginDefinition));
     }
 }
