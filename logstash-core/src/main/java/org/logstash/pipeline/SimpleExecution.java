@@ -10,9 +10,9 @@ public class SimpleExecution implements Execution {
     private final PipelineIR ir;
     private boolean stopped = false;
 
-    public SimpleExecution(PluginFactory pluginFactory, PipelineIR ir) {
+    public SimpleExecution(PipelineIR pipelineIR, PluginFactory pluginFactory) {
         this.publicFactory = pluginFactory;
-        this.ir = ir;
+        this.ir = pipelineIR;
         //this.processors = createPlugins();
         // Create / register plugin
         // compile the execution

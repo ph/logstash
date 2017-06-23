@@ -36,6 +36,7 @@ import org.logstash.pipeline.Builder
 import org.logstash.queue.Batch
 import org.logstash.queue.ReadClient
 import org.logstash.queue.WriteClient
+import org.logstash.pipeline.InputSource
 
 module LogStash
   # Usercase: input run raise exception
@@ -71,8 +72,8 @@ module LogStash
       # TODO:
       #
       # - [ ] We need to validate the ID in the graph to make sure they are unique when user are defining there own IDs.
-      # - [ ] Batch size is a properties of the queue reader, not a concern of the runner of the plugin reading off the queue
-      # - [ ] Add a plugin factory to create the instance in the ruby world
+      # - [x] Batch size is a properties of the queue reader, not a concern of the runner of the plugin reading off the queue
+      # - [x] Add a plugin factory to create the instance in the ruby world
       # - [ ] Max inflight message bootstrap check per pipeline/visitor settings
       # - [ ] define states of the pipeline
       # - [ ] add Log4j context for logging
@@ -83,22 +84,25 @@ module LogStash
       # - [ ] Add a scheduled task thread poll http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ForkJoinPool.html#commonPool--
       # - [ ] Check for uncaught exception
       # - [ ] Merge read/client and just pass the queue to the builder
-      # - [ ] Create InputSource
+      # - [x] Create InputSource
       #
       @settings = pipeline_config.settings
       @pipeline_config = pipeline_config
 
       @queue = LogStash::QueueFactory.create(@settings)
-      pipeline_ir = compile_ir(pipeline_config.config_string)
-      plugin_factory = LogStash::Pipelines::PluginFactory.new
 
-      @pipeline = org.logstash.pipeline.Builder.new(pipeline_ir)
+      pipeline_ir = compile_ir(pipeline_config.config_string)
+      plugin_factory = LogStash::Pipelines::PluginFactory.new(pipeline_config.pipeline_id)
+
+      input_sources = org.logstash.pipeline.InputSource.new(pipeline_ir, plugin_factory)
+      execution = org.logstash.pipeline.SimpleExecution.new(pipeline_ir, plugin_factory)
+
+      @pipeline = org.logstash.pipeline.Builder.new(execution, input_sources)
                       .pipelineId(@pipeline_config.pipeline_id)
-                      .workers(@settings.get("pipeline.workers")
-                      .pluginFactory(plugin_factory)
+                      .workers(@settings.get("pipeline.workers"))
                       .writeClient(@queue.write_client)
                       .readClient(@queue.read_client)
-                      .build();
+                      .build()
     end
 
     def running?
@@ -151,7 +155,10 @@ module LogStash
     # Notes: Currently the action is using the return value know if we successfully started the
     # pipeline.
     def start
-      @pipeline.start
+      logger.info("HEY STARTING JAVA")
+      result =  @pipeline.start
+      logger.info("HEY STOPPING JAVA")
+      resutl
     end
 
     def shutdown(&before_stop)

@@ -5,7 +5,6 @@ import org.logstash.queue.ReadClient;
 import org.logstash.queue.WriteClient;
 
 public class Builder {
-    private final PipelineIR pipelineIR;
     private int workersCount = Runtime.getRuntime().availableProcessors();
     private String pipelineId = "main";
     private ReadClient readClient;

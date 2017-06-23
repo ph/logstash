@@ -1,8 +1,9 @@
 package org.logstash.pipeline;
 
 import org.logstash.queue.WriteClient;
+import org.logstash.util.LogstashWorker;
 
-public class InputWorker implements Runnable {
+public class InputWorker implements Runnable, LogstashWorker {
     private final InputProcessor input;
     private final WriteClient writeClient;
 
@@ -17,5 +18,10 @@ public class InputWorker implements Runnable {
         while(true) {
            input.process(writeClient);
         }
+    }
+
+    @Override
+    public String getWorkerName() {
+        return "input plugin";
     }
 }

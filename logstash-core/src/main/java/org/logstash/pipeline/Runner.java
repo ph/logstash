@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Runner {
-    private static final Logger logger = LogManager.getLogger(Event.class);
+    private static final Logger logger = LogManager.getLogger(Runner.class);
 
     private final String pipelineId;
     private final int workersCount;
@@ -27,6 +27,7 @@ public class Runner {
 
     private ArrayList producers = new ArrayList<InputWorker>();
     private ArrayList workers = new ArrayList<Worker>();
+
 
 
     // TODO(ph): State machine
@@ -49,12 +50,14 @@ public class Runner {
     public boolean start() {
         logger.info("Starting Pipeline: {}", pipelineId);
 
-        createInputWorkers();
-        createWorkers();
+        //createInputWorkers();
+        //createWorkers();
         startWorkers();
         startInputWorkers();
 
         logger.info("Pipeline started: {}", pipelineId);
+
+        return true;
     }
 
     private void startWorkers() {
@@ -78,7 +81,7 @@ public class Runner {
 
     private void createInputWorkers() {
         logger.debug("Creating input workers");
-        inputSource.getSources().forEach(input -> producers.add(new InputWorker(input, writeClient)));
+        inputSource.sources().forEach(input -> producers.add(new InputWorker(input, writeClient)));
     }
 
     public String getPipelineId() {
