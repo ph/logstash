@@ -1,6 +1,5 @@
 package org.logstash.pipeline;
 
-import jdk.internal.util.xml.impl.Input;
 import org.logstash.config.ir.PipelineIR;
 import org.logstash.config.ir.graph.PluginVertex;
 
