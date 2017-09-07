@@ -67,8 +67,15 @@ module Bundler
       gemfile = LogStash::Gemfile.new(File.new(gemfile_path, "r+")).load
 
       begin
+        # When we update new gems but the gems is already installed it
+        # will be locked to a specific version in the lock and the installer
+        # will refuse to update it. We need to pass to the definition which the gems
+        # that we can update.
+        unlockable_gems = []
+
         @new_deps.each do |dependency|
           gemfile.update(dependency.name, dependency.requirement)
+          unlockable_gems << dependency.name
         end
 
         # If the dependency is defined in the gemfile, lets try to update the version with the one we have
@@ -77,10 +84,11 @@ module Bundler
           if gemfile.defined_in_gemfile?(dependency.name)
             gemfile.update(dependency.name, dependency.requirement)
           end
+          unlockable_gems << dependency.name
         end
 
         builder.eval_gemfile("bundler file", gemfile.generate())
-        definition = builder.to_definition(lockfile_path, {})
+        definition = builder.to_definition(lockfile_path, { :gems => unlockable_gems })
         definition.lock(lockfile_path)
         gemfile.save
       rescue => e
