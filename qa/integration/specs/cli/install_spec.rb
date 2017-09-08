@@ -18,11 +18,12 @@ describe "CLI > logstash-plugin install" do
     @fixture = Fixture.new(__FILE__)
     @logstash = @fixture.get_service("logstash")
     @logstash_plugin = @logstash.plugin_cli
-    @pack_directory =  File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "fixtures", "logstash-dummy-pack"))
   end
 
+  let(:fixtures_directory) { File.expand_path(File.join(File.dirname(__FILE__), "..", "..", "fixtures")) }
+
   shared_examples "install from a pack" do
-    let(:pack) { "file://#{File.join(@pack_directory, "logstash-dummy-pack.zip")}" }
+    let(:pack) { "file://#{File.join(fixtures_directory, "logstash-dummy-pack", "logstash-dummy-pack.zip")}" }
     let(:install_command) { "bin/logstash-plugin install" }
     let(:change_dir) { true }
 
@@ -92,6 +93,12 @@ describe "CLI > logstash-plugin install" do
           Dir.chdir(@current)
         end
       end
+    end
+
+    context "when the pack contains an updated gem" do
+      let(:pack) { "file://#{File.join(fixtures_directory, "logstash-upgradeable-pack", "logstash-upgradeable-pack.zip")}" }
+
+      include_examples "install from a pack"
     end
   end
 end
