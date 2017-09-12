@@ -88,8 +88,7 @@ module Bundler
         end
 
         builder.eval_gemfile("bundler file", gemfile.generate())
-        #definition = builder.to_definition(lockfile_path, { :gems => unlockable_gems })
-        definition = builder.to_definition(lockfile_path, {})
+        definition = builder.to_definition(lockfile_path, { :gems => unlockable_gems })
         definition.lock(lockfile_path)
         gemfile.save
       rescue => e

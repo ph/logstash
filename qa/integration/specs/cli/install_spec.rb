@@ -6,10 +6,35 @@ require_relative "../../framework/helpers"
 require "logstash/devutils/rspec/spec_helper"
 require "stud/temporary"
 require "fileutils"
+require "ostruct"
 
 def gem_in_lock_file?(pattern, lock_file)
   content =  File.read(lock_file)
   content.match(pattern)
+end
+
+def backup_files(*files)
+  files.flatten.collect { |file| backup_file(file) }
+end
+
+def backup_file(file_to_backup)
+  file_to_backup = File.expand_path(file_to_backup)
+  tmp_directory = Stud::Temporary.pathname
+  FileUtils.mkdir_p(tmp_directory)
+  backup_to_file = File.join(tmp_directory, File::SEPARATOR, File.basename(file_to_backup))
+
+  FileUtils.cp(file_to_backup, backup_to_file)
+  OpenStruct.new(:original_path => file_to_backup, :backup_file => backup_to_file)
+end
+
+def restore_files(*backuped_files)
+  backuped_files.flatten.each { |backup_file| FileUtils.cp(backup_file.backup_file, backup_file.original_path) }
+end
+
+def set_gemspec_version(version, template, target)
+  content = File.read(template)
+  content.gsub!("{VERSION}", version)
+  IO.write(target, content)
 end
 
 describe "CLI > logstash-plugin install" do
@@ -26,6 +51,8 @@ describe "CLI > logstash-plugin install" do
     let(:pack) { "file://#{File.join(fixtures_directory, "logstash-dummy-pack", "logstash-dummy-pack.zip")}" }
     let(:install_command) { "bin/logstash-plugin install" }
     let(:change_dir) { true }
+    let(:installed_plugin) { "logstash-output-secret" }
+    let(:installed_dependency) { "gemoji" }
 
     # When you are on anything by linux we won't disable the internet with seccomp
     if RbConfig::CONFIG["host_os"] == "linux"
@@ -48,10 +75,10 @@ describe "CLI > logstash-plugin install" do
           expect(execute.stderr_and_stdout).to match(/Install successful/)
           expect(execute.exit_code).to eq(0)
 
-          installed = @logstash_plugin.list("logstash-output-secret")
-          expect(installed.stderr_and_stdout).to match(/logstash-output-secret/)
+          installed = @logstash_plugin.list(installed_plugin)
+          expect(installed.stderr_and_stdout).to match(/#{installed_plugin}/)
 
-          expect(gem_in_lock_file?(/gemoji/, @logstash.lock_file)).to be_truthy
+          expect(gem_in_lock_file?(/#{installed_dependency}/, @logstash.lock_file)).to be_truthy
         end
       end
     else
@@ -63,10 +90,10 @@ describe "CLI > logstash-plugin install" do
           expect(execute.stderr_and_stdout).to match(/Install successful/)
           expect(execute.exit_code).to eq(0)
 
-          installed = @logstash_plugin.list("logstash-output-secret")
-          expect(installed.stderr_and_stdout).to match(/logstash-output-secret/)
+          installed = @logstash_plugin.list(installed_plugin)
+          expect(installed.stderr_and_stdout).to match(/#{installed_plugin}/)
 
-          expect(gem_in_lock_file?(/gemoji/, @logstash.lock_file)).to be_truthy
+          expect(gem_in_lock_file?(/#{installed_dependency}/, @logstash.lock_file)).to be_truthy
         end
       end
     end
@@ -96,9 +123,36 @@ describe "CLI > logstash-plugin install" do
     end
 
     context "when the pack contains an updated gem" do
-      let(:pack) { "file://#{File.join(fixtures_directory, "logstash-upgradeable-pack", "logstash-upgradeable-pack.zip")}" }
+      let(:upgradeable_pack_directory) { File.expand_path(File.join(fixtures_directory, "logstash-upgradeable-pack")) }
+      let(:stud_virtual_gemspec) { File.join(upgradeable_pack_directory, "stud.gemspec") }
+      let(:stud_virtual_gemspec_template) { "#{stud_virtual_gemspec}.template" }
+      # Use a shell scripts to generate a custom pack, using the virtual gemspec
+      let(:create_pack_cmd) { "./bundle.sh" }
+      let(:stud_version) { "0.0.24" }
 
-      include_examples "install from a pack"
+      before :each do
+        @backup = backup_files(
+          File.join(@logstash.logstash_home, "Gemfile"),
+          File.join(@logstash.logstash_home, "Gemfile.jruby-2.3.lock")
+        )
+
+        set_gemspec_version(stud_version, stud_virtual_gemspec_template, stud_virtual_gemspec)
+
+        Dir.chdir(upgradeable_pack_directory) do
+          system(create_pack_cmd)
+        end
+      end
+
+      after :each do
+        restore_files(@backup)
+        FileUtils.rm(stud_virtual_gemspec)
+      end
+
+      include_examples "install from a pack" do
+        let(:pack) { "file://#{File.join(upgradeable_pack_directory, "logstash-upgradeable-pack.zip")}" }
+        let(:installed_plugin) { "logstash-input-secret" }
+        let(:installed_dependency) { "stud" }
+      end
     end
   end
 end

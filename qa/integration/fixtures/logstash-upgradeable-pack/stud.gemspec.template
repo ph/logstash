@@ -1,0 +1,20 @@
+# This is a virtual gemspec to create a pack that will try to update or downgrade
+# a locked gem, this gems is broken and incomplete and should not be pushed to rubygems!!
+Gem::Specification.new do |s|
+  s.name          = 'stud'
+  s.version       = '{VERSION}'
+  s.licenses      = ['Nonstandard']
+  s.summary       = 'Test the upgrade gems from a pack'
+  s.description   = 'Test the upgrade gems from a pack'
+  s.homepage      = 'https://github.com/ph/secret'
+  s.authors       = ['Elastic']
+  s.email         = 'info@elastic.co'
+  s.require_paths = ['lib']
+
+  # Make sure we cannot publish this dummy gem on rubygems
+  # its only used in the integration suite.
+  s.metadata['allowed_push_host'] = 'http://localhost'
+
+  s.files = Dir['stud.gemspec']
+  s.test_files = s.files.grep(%r{^(test|spec|features)/})
+end

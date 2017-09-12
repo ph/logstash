@@ -14,15 +14,12 @@ Gem::Specification.new do |s|
   s.metadata['allowed_push_host'] = 'http://localhost'
 
   # Files
-  s.files = Dir['lib/**/*','spec/**/*','*.gemspec','*.md','CONTRIBUTORS','Gemfile','LICENSE','NOTICE.TXT']
+  s.files = Dir['logstash-input-secret.gemspec']
    # Tests
   s.test_files = s.files.grep(%r{^(test|spec|features)/})
 
   # Special flag to let us know this is actually a logstash plugin
   s.metadata = { "logstash_plugin" => "true", "logstash_group" => "input" }
 
-  s.add_runtime_dependency "rubyzip"
-
-  s.add_development_dependency "paquet"
-  s.add_development_dependency "rake"
+  s.add_runtime_dependency "stud", "~> 0"
 end
